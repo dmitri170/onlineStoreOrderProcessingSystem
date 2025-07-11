@@ -1,0 +1,19 @@
+// inventory.proto
+syntax = "proto3";
+
+package com.example.inventory;
+
+service InventoryService {
+  rpc CheckAvailability(ProductRequest) returns (ProductResponse);
+}
+
+message ProductRequest {
+  int64 productId = 1;
+}
+
+message ProductResponse {
+  int64 productId = 1;
+  int32 quantity = 2;
+  double price = 3;
+  double sale = 4;
+}

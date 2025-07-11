@@ -7,3 +7,5 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    jwt:
+      secret: my_key_2000
