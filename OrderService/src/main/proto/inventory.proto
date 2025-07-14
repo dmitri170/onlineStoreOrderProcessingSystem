@@ -1,10 +1,12 @@
-// inventory.proto
 syntax = "proto3";
 
 package com.example.inventory;
 
+option java_package = "com.example.inventory";
+option java_multiple_files = true;
+
 service InventoryService {
-  rpc CheckAvailability(ProductRequest) returns (ProductResponse);
+  rpc CheckAvailability (ProductRequest) returns (ProductResponse);
 }
 
 message ProductRequest {
