@@ -1,0 +1,10 @@
+/build
+/.gradle
+/out
+*.iml
+*.log
+*.tmp
+*.swp
+.idea
+*.class
+*.jar
