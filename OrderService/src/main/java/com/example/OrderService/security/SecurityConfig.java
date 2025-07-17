@@ -65,4 +65,6 @@ public class SecurityConfig{
                 .antMatchers("/api/users/**").hasRole("ADMIN")
                 .antMatchers("/auth/**").permitAll();
     }*/
+
+
 }
