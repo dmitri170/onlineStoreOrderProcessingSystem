@@ -3,7 +3,7 @@ package com.example.NotificationService.controller;
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,7 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
-public class ReadOrderController {
+public class OrderController {
 
     private final OrderRepository orderRepository;
 
@@ -23,13 +23,15 @@ public class ReadOrderController {
         return orderRepository.findAll();
     }
 
-    @GetMapping("/order/{orderId}")
-    public List<Order> getByOrderId(@PathVariable Long orderId) {
-        return orderRepository.findByOrderId(orderId);
+    // Добавить (отсутствует в вашем коде)
+    @GetMapping("/order/{order_id}")
+    public List<Order> getOrdersByOrderId(@PathVariable("order_id") Long orderId) {
+        return orderRepository.findByOrderId(orderId); // Требуется метод в репозитории
     }
 
-    @GetMapping("/user/{userId}")
-    public List<Order> getByUserId(@PathVariable Long userId) {
-        return orderRepository.findByUserId(userId);
+    // Добавить (отсутствует в вашем коде)
+    @GetMapping("/user/{user_id}")
+    public List<Order> getOrdersByUserId(@PathVariable("user_id") Long userId) {
+        return orderRepository.findByUserId(userId); // Требуется метод в репозитории
     }
 }
