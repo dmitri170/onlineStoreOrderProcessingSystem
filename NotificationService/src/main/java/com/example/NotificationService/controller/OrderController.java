@@ -2,6 +2,7 @@ package com.example.NotificationService.controller;
 
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.repository.OrderRepository;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,8 +25,8 @@ public class OrderController {
     }
 
     // Добавить (отсутствует в вашем коде)
-    @GetMapping("/order/{order_id}")
-    public List<Order> getOrdersByOrderId(@PathVariable("order_id") Long orderId) {
+    @GetMapping("/{order_id}")
+    public List<Order> getOrdersByOrderId(@PathVariable("order_id") @Min(1) Long orderId) {
         return orderRepository.findByOrderId(orderId); // Требуется метод в репозитории
     }
 

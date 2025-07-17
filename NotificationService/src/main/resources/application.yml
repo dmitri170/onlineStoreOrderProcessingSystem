@@ -3,3 +3,15 @@ logging:
     root: INFO
     org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
+
+spring:
+  kafka:
+    listener:
+      ack-mode: MANUAL
+      retry:
+        max-attempts: 3
+        backoff:
+          initial-interval: 1000ms
+    consumer:
+      properties:
+        auto.offset.reset: earliest
