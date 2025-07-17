@@ -5,3 +5,10 @@ grpc:
   server:
     port: 9090
     address: 0.0.0.0
+
+spring:
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: true

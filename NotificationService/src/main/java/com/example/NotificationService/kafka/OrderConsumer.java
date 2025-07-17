@@ -2,7 +2,6 @@ package com.example.NotificationService.kafka;
 
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderEntity;
-import com.example.NotificationService.entity.User;
 import com.example.NotificationService.repository.OrderItemRepository;
 import com.example.NotificationService.repository.OrderRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,4 +57,13 @@ public class OrderConsumer {
             log.error("Failed to process message: {}", message, e);
         }
     }
+    /*@KafkaListener(topics = "orders")
+    public void listen(OrderEntity event) {
+        try {
+            notificationService.processOrder(event);
+        } catch (Exception e) {
+            log.error("Error processing order {}", event.getOrderId(), e);
+            // Можно добавить dead-letter queue
+        }
+    }*/
 }
