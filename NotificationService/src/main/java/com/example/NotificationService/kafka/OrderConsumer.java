@@ -1,7 +1,7 @@
 package com.example.NotificationService.kafka;
 
 import com.example.NotificationService.entity.Order;
-import com.example.NotificationService.entity.OrderEntity;
+import com.example.NotificationService.entity.dto.OrderDto;
 import com.example.NotificationService.repository.OrderItemRepository;
 import com.example.NotificationService.repository.OrderRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -36,9 +36,9 @@ public class OrderConsumer {
             order = orderRepository.save(order);
 
             JsonNode items = node.get("items");
-            List<OrderEntity> orderItems = new ArrayList<>();
+            List<OrderDto> orderItems = new ArrayList<>();
             for (JsonNode item : items) {
-                OrderEntity entity = OrderEntity.builder()
+                OrderDto entity = OrderDto.builder()
                         .order(order)
                         .userId(userId) // ✅ просто ID, без создания объекта User
                         .productId(item.get("productId").asLong())

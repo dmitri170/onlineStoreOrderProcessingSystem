@@ -1,5 +1,6 @@
 package com.example.InventoryService.service;
 
+import com.example.InventoryService.dto.ProductRequest;
 import com.example.InventoryService.entity.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,5 +12,6 @@ public class ProductService {
     public void updateProduct(Product product){
 
     }
+
 
 }
