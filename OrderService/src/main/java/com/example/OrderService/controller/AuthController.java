@@ -6,20 +6,19 @@ import com.example.OrderService.entity.Role;
 import com.example.OrderService.entity.User;
 import com.example.OrderService.repository.UserRepository;
 import com.example.OrderService.security.JwtTokenProvider;
+import com.example.OrderService.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,20 +32,22 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserService userService;
 
     @RequestMapping("/reg")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request){
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request, Authentication authentication){
+
         if(userRepository.findByUsername(request.getUsername()).isPresent()){
             return ResponseEntity.badRequest().body("Username already taken");
         }
         Role role=request.getRole()!=null?request.getRole():Role.USER;
-        User user=User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(role)
-                .build();
-        userRepository.save(user);
+        User currentUser = userRepository.findByUsername(authentication.getName()).orElse(null);
+        if (role == Role.ADMIN
+                && (currentUser == null || currentUser.getRole() != Role.ADMIN)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Only admins can assign ADMIN role");
+        }
+        userService.registerUser(request, role);
         return ResponseEntity.ok("User registered with role: " + role);
     }
     @PostMapping("/login")
