@@ -6,6 +6,7 @@ import com.example.OrderService.message.model.OrderMessage;
 import com.example.OrderService.repository.UserRepository;
 import com.example.OrderService.grpc.InventoryClient;
 import com.example.OrderService.kafka.OrderProducer;
+import com.example.OrderService.service.OrderService;
 import com.example.inventory.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +23,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final InventoryClient inventoryClient;
-    private final OrderProducer orderProducer;
-    private final UserRepository userRepository;
+    private final OrderService orderService;
 
     @PostMapping("/order")
     public ResponseEntity<?> createOrder(
             @RequestBody OrderRequest request,
             Authentication authentication) {
-
+/*
         // Извлекаем имя пользователя из JWT
         String username = authentication.getName();
 
@@ -67,7 +66,10 @@ public class OrderController {
                 .build();
 
         orderProducer.sendOrder(message);
+*/
 
-        return ResponseEntity.ok("Order created successfully with ID: " + message.getOrderId());
+        String username = authentication.getName();
+        String orderId = orderService.processOrder(request, username);
+        return ResponseEntity.ok("Order created successfully with ID: " + orderId);
     }
 }
