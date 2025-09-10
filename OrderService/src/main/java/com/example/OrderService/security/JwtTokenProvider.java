@@ -61,6 +61,7 @@ public class JwtTokenProvider {
         }catch (JwtException | IllegalArgumentException e){
             return false;
         }
+
     }
 
     public Authentication getAuthentication(String token) {
@@ -99,6 +100,15 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
 
         return createToken(username, authorities);
+    }
+
+    public String getUsernameFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getSubject();
     }
 
 }

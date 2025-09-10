@@ -1,48 +1,51 @@
 package com.example.InventoryService.controller;
 
-import com.example.InventoryService.entity.Product;
-import com.example.InventoryService.repository.ProductRepository;
+
+import com.example.InventoryService.dto.ProductDto;
+import com.example.InventoryService.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/products")
+@RequiredArgsConstructor
 public class ProductController {
 
-    public final ProductRepository productRepository;
+    private final ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productRepository.findAll();
+    public ResponseEntity<List<ProductDto>> getAllProducts() {
+        List<ProductDto> products = productService.getAllProducts();
         return ResponseEntity.ok(products);
     }
 
     @PostMapping
-    public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) {
-        Product savedProduct = productRepository.save(product);
+    public ResponseEntity<ProductDto> createProduct(@Valid @RequestBody ProductDto productDto) {
+        ProductDto savedProduct = productService.createProduct(productDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedProduct);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProduct(@PathVariable Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+    public ResponseEntity<ProductDto> getProduct(@PathVariable Long id) {
+        ProductDto product = productService.getProductById(id);
         return ResponseEntity.ok(product);
     }
-    @DeleteMapping("/id")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id){
-        if(!productRepository.existsById(id)){
-            throw new ResourceNotFoundException("Product not fount with id: "+id);
-        }
-        productRepository.deleteById(id);
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductDto> updateProduct(@PathVariable Long id,
+                                                    @Valid @RequestBody ProductDto productDto) {
+        ProductDto updatedProduct = productService.updateProduct(id, productDto);
+        return ResponseEntity.ok(updatedProduct);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 }

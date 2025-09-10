@@ -28,6 +28,6 @@ public class Product {
     private Double price;
 
     @Column(nullable = false)
-    private Integer sale;
+    private Double sale;
 
 }
