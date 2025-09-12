@@ -34,11 +34,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
+
     private final UserService userService;
-    private final CustomUserDetailsService customUserDetailsService;
 
     @RequestMapping("/reg")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request){

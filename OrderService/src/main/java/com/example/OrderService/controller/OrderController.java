@@ -29,44 +29,6 @@ public class OrderController {
     public ResponseEntity<?> createOrder(
             @RequestBody OrderRequest request,
             Authentication authentication) {
-/*
-        // Извлекаем имя пользователя из JWT
-        String username = authentication.getName();
-
-        // Проверяем, существует ли пользователь
-        Long userId = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"))
-                .getId();
-
-        List<OrderItemDTO> validatedItems = new ArrayList<>();
-        BigDecimal total = BigDecimal.ZERO;
-
-        // Проверка каждого товара и расчёт итоговой суммы
-        for (OrderItemDTO item : request.getItems()) {
-            ProductResponse product = inventoryClient.checkAvailability(item.getProductId());
-
-            if (product.getQuantity() < item.getQuantity()) {
-                return ResponseEntity.badRequest().body("Insufficient stock for product ID " + item.getProductId());
-            }
-
-            BigDecimal itemTotal = BigDecimal.valueOf(product.getPrice())
-                    .multiply(BigDecimal.valueOf(1 - product.getSale()))
-                    .multiply(BigDecimal.valueOf(item.getQuantity()));
-
-            total = total.add(itemTotal);
-            validatedItems.add(item);
-        }
-
-        // Создаём сообщение и отправляем в Kafka
-        OrderMessage message = OrderMessage.builder()
-                .orderId(UUID.randomUUID().toString())
-                .userId(userId)
-                .items(validatedItems)
-                .totalPrice(total.doubleValue())
-                .build();
-
-        orderProducer.sendOrder(message);
-*/
 
         String username = authentication.getName();
         String orderId = orderService.processOrder(request, username);
