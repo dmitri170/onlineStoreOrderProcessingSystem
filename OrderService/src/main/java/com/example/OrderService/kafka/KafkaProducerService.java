@@ -32,7 +32,6 @@ public class KafkaProducerService {
     }
 
     public void sendOrderEvent(String eventType, Object orderData) {
-        // Используем значение из конфига, а не хардкод
         String topic = kafkaTopicsConfig.getOrderEvents();
         sendMessage(topic, eventType, orderData);
     }

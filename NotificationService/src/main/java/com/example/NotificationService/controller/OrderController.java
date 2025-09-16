@@ -27,12 +27,12 @@ public class OrderController {
     // Добавить (отсутствует в вашем коде)
     @GetMapping("/{order_id}")
     public List<Order> getOrdersByOrderId(@PathVariable("order_id") @Min(1) Long orderId) {
-        return orderRepository.findByOrderId(orderId); // Требуется метод в репозитории
+        return orderRepository.findByOrderId(orderId);
     }
 
     // Добавить (отсутствует в вашем коде)
     @GetMapping("/user/{user_id}")
     public List<Order> getOrdersByUserId(@PathVariable("user_id") Long userId) {
-        return orderRepository.findByUserId(userId); // Требуется метод в репозитории
+        return orderRepository.findByUserId(userId);
     }
 }

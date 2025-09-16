@@ -1,5 +1,6 @@
 package com.example.OrderService.security;
 
+import com.example.OrderService.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,7 +42,7 @@ public class SecurityConfig{
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(customUserDetailsService);
+        provider.setUserDetailsService((UserDetailsService) customUserDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
@@ -57,14 +58,17 @@ public class SecurityConfig{
         return config.getAuthenticationManager();
     }
 
-    /*protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
-                .authorizeRequests()
-                .antMatchers("/api/order/**").authenticated()
-                .antMatchers("/api/users/**").hasRole("ADMIN")
-                .antMatchers("/auth/**").permitAll();
-    }*/
+                .csrf().disable()
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/api/products/**").hasAnyRole("ADMIN", "USER")
+                        .anyRequest().authenticated()
+                )
+                .httpBasic();
+        return http.build();
+    }
 
 
 }

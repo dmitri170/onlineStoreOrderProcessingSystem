@@ -1,5 +1,6 @@
 package com.example.OrderService.security;
 
+import com.example.OrderService.exception.JwtAuthenticationException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -51,17 +52,26 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public boolean validateToken(String token) {
+    public boolean validateToken(String jwt) {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
-                    .parseClaimsJws(token);
+                    .parseClaimsJws(jwt);
             return true;
-        }catch (JwtException | IllegalArgumentException e){
-            return false;
+        } catch (MalformedJwtException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
+            throw new JwtAuthenticationException("Invalid JWT token");
+        } catch (ExpiredJwtException e) {
+            log.error("JWT token is expired: {}", e.getMessage());
+            throw new JwtAuthenticationException("JWT token is expired");
+        } catch (UnsupportedJwtException e) {
+            log.error("JWT token is unsupported: {}", e.getMessage());
+            throw new JwtAuthenticationException("JWT token is unsupported");
+        } catch (IllegalArgumentException e) {
+            log.error("JWT claims string is empty: {}", e.getMessage());
+            throw new JwtAuthenticationException("JWT claims string is empty");
         }
-
     }
 
     public Authentication getAuthentication(String token) {
