@@ -3,7 +3,7 @@ package com.example.InventoryService.service;
 
 import com.example.InventoryService.dto.ProductAvailability;
 import com.example.InventoryService.dto.ProductDto;
-import com.example.InventoryService.entity.Product;
+import com.example.InventoryService.model.Product;
 import com.example.InventoryService.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +44,6 @@ public class ProductService {
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // Обновляем только те поля, которые пришли в DTO
         if (productDto.getName() != null) {
             existingProduct.setName(productDto.getName());
         }
@@ -86,5 +86,8 @@ public class ProductService {
                         product.getQuantity() > 0
                 ))
                 .collect(Collectors.toList());
+    }
+    public Optional<Product> getProductInfoForOrder(Long productId) {
+        return productRepository.findById(productId);
     }
 }
