@@ -11,6 +11,7 @@ import com.example.inventory.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.math.BigDecimal;
@@ -26,6 +27,7 @@ public class OrderService {
     private final OrderProducer orderProducer;
     private final UserRepository userRepository;
 
+    @Transactional
     public String processOrder(OrderRequest request, String username) {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 

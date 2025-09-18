@@ -94,24 +94,38 @@ public class JwtTokenProvider {
     }
 
     public String refreshToken(String oldToken) {
-        if (!validateToken(oldToken)) {
-            throw new JwtException("Invalid token");
+        try {
+            // Пытаемся распарсить токен даже если он expired
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(oldToken)
+                    .getBody();
+
+            String username = claims.getSubject();
+            String auth = claims.get("auth", String.class);
+
+            List<GrantedAuthority> authorities = Arrays.stream(auth.split(","))
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+
+            return createToken(username, authorities);
+
+        } catch (ExpiredJwtException e) {
+            // Особый случай: expired токен можно refresh'ить
+            String username = e.getClaims().getSubject();
+            String auth = e.getClaims().get("auth", String.class);
+
+            List<GrantedAuthority> authorities = Arrays.stream(auth.split(","))
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+
+            return createToken(username, authorities);
+
+        } catch (Exception e) {
+            log.error("Invalid refresh token: {}", e.getMessage());
+            throw new JwtAuthenticationException("Invalid refresh token");
         }
-
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(oldToken)
-                .getBody();
-
-        String username = claims.getSubject();
-        String auth = claims.get("auth", String.class);
-
-        List<GrantedAuthority> authorities = Arrays.stream(auth.split(","))
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-
-        return createToken(username, authorities);
     }
 
     public String getUsernameFromToken(String token) {
