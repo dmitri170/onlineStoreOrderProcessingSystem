@@ -1,75 +1,76 @@
 package com.example.NotificationService.service;
 
 import com.example.NotificationService.entity.Order;
+import com.example.NotificationService.entity.OrderItem;
 import com.example.NotificationService.entity.dto.OrderDto;
 import com.example.NotificationService.repository.OrderRepository;
-import lombok.RequiredArgsConstructor;
+import com.example.NotificationService.repository.OrderItemRepository;
 import org.springframework.stereotype.Service;
-import org.modelmapper.ModelMapper;
-import com.example.NotificationService.entity.OrderItem;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final ModelMapper modelMapper;
+    private final OrderItemRepository orderItemRepository;
 
-    public OrderService(OrderRepository orderRepository, ModelMapper modelMapper) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
         this.orderRepository = orderRepository;
-        this.modelMapper = modelMapper;
+        this.orderItemRepository = orderItemRepository;
     }
 
-    public void saveOrder(OrderDto dto) {
-        Order order = new Order();
-        order.setOrderId(Long.valueOf(dto.getOrderId()));
-        order.setUserId(dto.getUserId());
-        order.setTotalPrice(dto.getTotalPrice());
-        order.setOrderDate(dto.getOrderDate() != null ? dto.getOrderDate() : LocalDateTime.now());
-        order.setStatus("CREATED");
-
-        List<OrderItem> items = dto.getItems().stream()
-                .map(itemDto -> {
-                    OrderItem item = new OrderItem();
-                    item.setOrder(order); // Устанавливаем связь
-                    item.setProductId(itemDto.getProductId());
-                    item.setQuantity(itemDto.getQuantity());
-                    item.setPrice(itemDto.getPrice());
-                    item.setSale(itemDto.getSale());
-                    item.setItemTotal(calculateItemTotal(itemDto));
-                    return item;
-                })
-                .collect(Collectors.toList());
-
-        order.setItems(items);
+    public void processOrder(Order order) {
         orderRepository.save(order);
     }
 
     public List<OrderDto> getAllOrders() {
-        return orderRepository.findAll().stream()
-                .map(order -> modelMapper.map(order, OrderDto.class))
+        return orderRepository.findAllByOrderByIdAsc().stream()
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    public List<OrderDto> getOrdersByOrderId(String orderId) {
-        return orderRepository.findByOrderId(orderId).stream()
-                .map(order -> modelMapper.map(order, OrderDto.class))
-                .collect(Collectors.toList());
+    public List<OrderDto> getOrdersByOrderId(Long orderId) {
+        Optional<Order> order = orderRepository.findByOrderId(orderId);
+        return order.map(o -> List.of(convertToDto(o))).orElse(List.of());
     }
 
     public List<OrderDto> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(String.valueOf(userId)).stream()
-                .map(order -> modelMapper.map(order, OrderDto.class))
+        return orderRepository.findByUserId(userId).stream()
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    private BigDecimal calculateItemTotal(OrderDto.OrderItemDto itemDto) {
-        BigDecimal basePrice = itemDto.getPrice().multiply(BigDecimal.valueOf(itemDto.getQuantity()));
-        BigDecimal discount = basePrice.multiply(itemDto.getSale());
-        return basePrice.subtract(discount);
+    public List<OrderItem> getOrderItemsByOrderId(Long orderId) {
+        return orderItemRepository.findByOrderOrderId(orderId);
+    }
+
+    private OrderDto convertToDto(Order order) {
+        OrderDto dto = new OrderDto();
+        dto.setId(order.getId());
+        dto.setOrderId(order.getOrderId());
+        dto.setUserId(order.getUserId());
+        dto.setTotalPrice(order.getTotalPrice());
+        dto.setOrderDate(order.getOrderDate());
+
+        List<OrderItem> items = orderItemRepository.findByOrderOrderId(order.getOrderId());
+        List<OrderDto.OrderItemDto> itemDtos = items.stream()
+                .map(this::convertToItemDto)
+                .collect(Collectors.toList());
+        dto.setItems(itemDtos);
+
+        return dto;
+    }
+
+    private OrderDto.OrderItemDto convertToItemDto(OrderItem item) {
+        OrderDto.OrderItemDto dto = new OrderDto.OrderItemDto();
+        dto.setProductId(item.getProductId());
+        dto.setQuantity(item.getQuantity());
+        dto.setPrice(item.getPrice());
+        dto.setSale(item.getSale());
+        dto.setItemTotal(item.getItemTotal());
+        return dto;
     }
 }
