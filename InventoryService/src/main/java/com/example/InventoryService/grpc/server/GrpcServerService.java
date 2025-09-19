@@ -10,14 +10,17 @@ import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-@Slf4j
 @GrpcService
 public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImplBase {
 
     private final ProductService productService; // Заменяем репозиторий на сервис
+
+    private static final Logger log = LoggerFactory.getLogger(GrpcServerService.class);
 
     // Внедряем зависимость через конструктор
     public GrpcServerService(ProductService productService) {

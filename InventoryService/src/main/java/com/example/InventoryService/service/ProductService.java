@@ -1,6 +1,5 @@
 package com.example.InventoryService.service;
 
-
 import com.example.InventoryService.dto.ProductAvailability;
 import com.example.InventoryService.dto.ProductDto;
 import com.example.InventoryService.model.Product;
@@ -15,12 +14,16 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class ProductService {
 
     private final ProductRepository productRepository;
     private final ModelMapper modelMapper;
+
+    public ProductService(ProductRepository productRepository, ModelMapper modelMapper) {
+        this.productRepository = productRepository;
+        this.modelMapper = modelMapper;
+    }
 
     public List<ProductDto> getAllProducts() {
         return productRepository.findAll().stream()
@@ -34,6 +37,10 @@ public class ProductService {
         return convertToDto(product);
     }
 
+    public Optional<Product> getProductInfoForOrder(Long productId) {
+        return productRepository.findById(productId);
+    }
+
     public ProductDto createProduct(ProductDto productDto) {
         Product product = convertToEntity(productDto);
         Product savedProduct = productRepository.save(product);
@@ -44,18 +51,10 @@ public class ProductService {
         Product existingProduct = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        if (productDto.getName() != null) {
-            existingProduct.setName(productDto.getName());
-        }
-        if (productDto.getQuantity() != null) {
-            existingProduct.setQuantity(productDto.getQuantity());
-        }
-        if (productDto.getPrice() != null) {
-            existingProduct.setPrice(productDto.getPrice());
-        }
-        if (productDto.getSale() != null) {
-            existingProduct.setSale(productDto.getSale());
-        }
+        existingProduct.setName(productDto.getName());
+        existingProduct.setQuantity(productDto.getQuantity());
+        existingProduct.setPrice(productDto.getPrice());
+        existingProduct.setSale(productDto.getSale());
 
         Product updatedProduct = productRepository.save(existingProduct);
         return convertToDto(updatedProduct);
@@ -68,13 +67,6 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    private ProductDto convertToDto(Product product) {
-        return modelMapper.map(product, ProductDto.class);
-    }
-
-    private Product convertToEntity(ProductDto productDto) {
-        return modelMapper.map(productDto, Product.class);
-    }
     public List<ProductAvailability> checkProductsAvailability(List<Long> productIds) {
         return productRepository.findAllById(productIds).stream()
                 .map(product -> new ProductAvailability(
@@ -87,7 +79,12 @@ public class ProductService {
                 ))
                 .collect(Collectors.toList());
     }
-    public Optional<Product> getProductInfoForOrder(Long productId) {
-        return productRepository.findById(productId);
+
+    private ProductDto convertToDto(Product product) {
+        return modelMapper.map(product, ProductDto.class);
+    }
+
+    private Product convertToEntity(ProductDto productDto) {
+        return modelMapper.map(productDto, Product.class);
     }
 }
