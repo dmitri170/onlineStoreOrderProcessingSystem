@@ -1,10 +1,10 @@
-
 package com.example.OrderService.dto;
 
-import lombok.Data;
 import java.util.List;
 
-@Data
 public class OrderRequest {
     private List<OrderItemDTO> items;
+
+    public List<OrderItemDTO> getItems() { return items; }
+    public void setItems(List<OrderItemDTO> items) { this.items = items; }
 }

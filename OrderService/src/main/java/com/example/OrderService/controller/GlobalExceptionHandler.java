@@ -1,13 +1,12 @@
 package com.example.OrderService.controller;
 
+import com.example.OrderService.dto.ErrorResponse;
+import com.example.OrderService.exception.InsufficientStockException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
-import com.example.OrderService.dto.ErrorResponse;
-import com.example.OrderService.exception.InsufficientStockException;
 
 import java.util.stream.Collectors;
 

@@ -1,7 +1,8 @@
 package com.example.OrderService.kafka;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -10,21 +11,20 @@ import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class KafkaProducerService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final KafkaTopicsConfig kafkaTopicsConfig; // инжектим конфиг
+    private final KafkaTopicsConfig kafkaTopicsConfig;
+
+    private static final Logger log = LoggerFactory.getLogger(KafkaProducerService.class);
 
     public void sendMessage(String topic, String key, Object message) {
         log.info("Sending message to topic: {}, key: {}, message: {}", topic, key, message);
 
-        CompletableFuture<SendResult<String, Object>> future =
-                kafkaTemplate.send(topic, key, message);
+        CompletableFuture<SendResult<String, Object>> future = kafkaTemplate.send(topic, key, message);
 
         future.whenComplete((result, ex) -> {
             if (ex == null) {
-                log.info("Message sent successfully to topic: {} with offset: {}",
-                        topic, result.getRecordMetadata().offset());
+                log.info("Message sent successfully to topic: {} with offset: {}", topic, result.getRecordMetadata().offset());
             } else {
                 log.error("Failed to send message to topic: {}, error: {}", topic, ex.getMessage());
             }
