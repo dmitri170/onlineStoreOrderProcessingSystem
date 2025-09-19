@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -16,12 +18,13 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class OrderConsumer {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ObjectMapper objectMapper;
+
+    private static final Logger log = LoggerFactory.getLogger(OrderConsumer.class);
 
     @KafkaListener(topics = "orders", groupId = "notification-group")
     public void consume(String message) {

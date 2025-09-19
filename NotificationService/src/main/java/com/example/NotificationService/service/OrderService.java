@@ -14,14 +14,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class OrderService {
+
     private final OrderRepository orderRepository;
     private final ModelMapper modelMapper;
 
+    public OrderService(OrderRepository orderRepository, ModelMapper modelMapper) {
+        this.orderRepository = orderRepository;
+        this.modelMapper = modelMapper;
+    }
+
     public void saveOrder(OrderDto dto) {
         Order order = new Order();
-        order.setOrderId(dto.getOrderId()); // orderId должен приходить извне
+        order.setOrderId(Long.valueOf(dto.getOrderId()));
         order.setUserId(dto.getUserId());
         order.setTotalPrice(dto.getTotalPrice());
         order.setOrderDate(dto.getOrderDate() != null ? dto.getOrderDate() : LocalDateTime.now());
@@ -57,7 +62,7 @@ public class OrderService {
     }
 
     public List<OrderDto> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId).stream()
+        return orderRepository.findByUserId(String.valueOf(userId)).stream()
                 .map(order -> modelMapper.map(order, OrderDto.class))
                 .collect(Collectors.toList());
     }
