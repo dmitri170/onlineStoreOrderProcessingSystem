@@ -1,2 +1,18 @@
-# Project exclude paths
-/out/
+# IDE
+*.iml
+*.iws
+*.ipr
+.idea/
+*.jpr
+*.lws
+
+# Maven
+target/
+**/target/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
