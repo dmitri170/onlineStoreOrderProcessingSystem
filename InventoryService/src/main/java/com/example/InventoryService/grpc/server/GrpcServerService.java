@@ -1,14 +1,12 @@
 package com.example.InventoryService.grpc.server;
 
 
-import com.example.InventoryService.model.Product;
+import com.example.InventoryService.model.ProductEntity;
 import com.example.InventoryService.service.ProductService;
 import com.example.InventoryService.grpc.stub.ProductRequest;
 import com.example.InventoryService.grpc.stub.ProductResponse;
 import com.example.InventoryService.grpc.stub.InventoryServiceGrpc;
 import io.grpc.stub.StreamObserver;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +30,7 @@ public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImpl
         log.info("Received gRPC request for product ID: {}", request.getProductId());
 
         // Используем сервис для получения данных
-        Optional<Product> productOptional = productService.getProductInfoForOrder(request.getProductId());
+        Optional<ProductEntity> productOptional = productService.getProductInfoForOrder(request.getProductId());
 
         if (productOptional.isEmpty()) {
             // Если товар не найден, отправляем ответ с quantity = 0
@@ -48,18 +46,18 @@ public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImpl
             return;
         }
 
-        Product product = productOptional.get();
+        ProductEntity productEntity = productOptional.get();
 
         // Строим ответ из данных о товаре
         ProductResponse response = ProductResponse.newBuilder()
-                .setProductId(product.getId())
-                .setPrice(product.getPrice())
-                .setSale(product.getSale())
-                .setQuantity(product.getQuantity())
+                .setProductId(productEntity.getId())
+                .setPrice(productEntity.getPrice())
+                .setSale(productEntity.getSale())
+                .setQuantity(productEntity.getQuantity())
                 .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
-        log.info("Response sent for product ID: {}", product.getId());
+        log.info("Response sent for product ID: {}", productEntity.getId());
     }
 }

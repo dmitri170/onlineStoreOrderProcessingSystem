@@ -2,9 +2,8 @@ package com.example.InventoryService.service;
 
 import com.example.InventoryService.dto.ProductAvailability;
 import com.example.InventoryService.dto.ProductDto;
-import com.example.InventoryService.model.Product;
+import com.example.InventoryService.model.ProductEntity;
 import com.example.InventoryService.repository.ProductRepository;
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,32 +31,32 @@ public class ProductService {
     }
 
     public ProductDto getProductById(Long id) {
-        Product product = productRepository.findById(id)
+        ProductEntity productEntity = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        return convertToDto(product);
+        return convertToDto(productEntity);
     }
 
-    public Optional<Product> getProductInfoForOrder(Long productId) {
+    public Optional<ProductEntity> getProductInfoForOrder(Long productId) {
         return productRepository.findById(productId);
     }
 
     public ProductDto createProduct(ProductDto productDto) {
-        Product product = convertToEntity(productDto);
-        Product savedProduct = productRepository.save(product);
-        return convertToDto(savedProduct);
+        ProductEntity productEntity = convertToEntity(productDto);
+        ProductEntity savedProductEntity = productRepository.save(productEntity);
+        return convertToDto(savedProductEntity);
     }
 
     public ProductDto updateProduct(Long id, ProductDto productDto) {
-        Product existingProduct = productRepository.findById(id)
+        ProductEntity existingProductEntity = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        existingProduct.setName(productDto.getName());
-        existingProduct.setQuantity(productDto.getQuantity());
-        existingProduct.setPrice(productDto.getPrice());
-        existingProduct.setSale(productDto.getSale());
+        existingProductEntity.setName(productDto.getName());
+        existingProductEntity.setQuantity(productDto.getQuantity());
+        existingProductEntity.setPrice(productDto.getPrice());
+        existingProductEntity.setSale(productDto.getSale());
 
-        Product updatedProduct = productRepository.save(existingProduct);
-        return convertToDto(updatedProduct);
+        ProductEntity updatedProductEntity = productRepository.save(existingProductEntity);
+        return convertToDto(updatedProductEntity);
     }
 
     public void deleteProduct(Long id) {
@@ -69,22 +68,22 @@ public class ProductService {
 
     public List<ProductAvailability> checkProductsAvailability(List<Long> productIds) {
         return productRepository.findAllById(productIds).stream()
-                .map(product -> new ProductAvailability(
-                        product.getId(),
-                        product.getName(),
-                        product.getPrice(),
-                        product.getSale(),
-                        product.getQuantity(),
-                        product.getQuantity() > 0
+                .map(productEntity -> new ProductAvailability(
+                        productEntity.getId(),
+                        productEntity.getName(),
+                        productEntity.getPrice(),
+                        productEntity.getSale(),
+                        productEntity.getQuantity(),
+                        productEntity.getQuantity() > 0
                 ))
                 .collect(Collectors.toList());
     }
 
-    private ProductDto convertToDto(Product product) {
-        return modelMapper.map(product, ProductDto.class);
+    private ProductDto convertToDto(ProductEntity productEntity) {
+        return modelMapper.map(productEntity, ProductDto.class);
     }
 
-    private Product convertToEntity(ProductDto productDto) {
-        return modelMapper.map(productDto, Product.class);
+    private ProductEntity convertToEntity(ProductDto productDto) {
+        return modelMapper.map(productDto, ProductEntity.class);
     }
 }

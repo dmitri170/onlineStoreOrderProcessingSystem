@@ -24,7 +24,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="InventoryService" options="" />
-      <module name="NotificationService" options="-parameters" />
+      <module name="NotificationService" options="" />
       <module name="OrderService" options="" />
     </option>
   </component>

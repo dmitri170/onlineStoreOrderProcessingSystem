@@ -10,7 +10,7 @@ import lombok.*;
 @Builder
 @Entity
 @Table(name = "products")
-public class Product {
+public class ProductEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -27,10 +27,10 @@ public class Product {
     @Column(nullable = false)
     private Double sale;
 
-    public Product() {
+    public ProductEntity() {
     }
 
-    public Product(long id, String name, Integer quantity, Double price, Double sale) {
+    public ProductEntity(long id, String name, Integer quantity, Double price, Double sale) {
         this.id = id;
         this.name = name;
         this.quantity = quantity;
