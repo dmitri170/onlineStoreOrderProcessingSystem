@@ -1,15 +1,13 @@
 package com.example.InventoryService.test;
 
-import com.example.InventoryService.grpc.stub.InventoryProto;
-import com.example.InventoryService.grpc.stub.InventoryServiceGrpc;
+import com.example.InventoryService.grpc.InventoryProto;
+import com.example.InventoryService.grpc.InventoryServiceGrpc;
 
 public class GrpcTest {
     public void test() {
-        // Если эти импорты работают - все ок
         InventoryProto.ProductRequest request = InventoryProto.ProductRequest.newBuilder()
                 .setProductId(1L)
                 .build();
-
-        System.out.println("gRPC classes are available!");
+        System.out.println("gRPC imports work correctly!");
     }
 }

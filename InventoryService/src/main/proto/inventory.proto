@@ -1,22 +1,20 @@
 syntax = "proto3";
 
-package inventory;
-
-option java_multiple_files = true;
-option java_package = "com.example.inventoryservice.grpc";
+option java_multiple_files = false;  // ИЗМЕНИТЕ НА false
+option java_package = "com.example.InventoryService.grpc";
+option java_outer_classname = "InventoryProto";
 
 service InventoryService {
-  rpc CheckAvailability(ProductRequest) returns (ProductResponse);
+  rpc checkAvailability(ProductRequest) returns (ProductResponse);
 }
 
 message ProductRequest {
-  int64 product_id = 1;
+  int64 productId = 1;
 }
 
 message ProductResponse {
-  int64 product_id = 1;
+  int64 productId = 1;
   double price = 2;
   double sale = 3;
   int32 quantity = 4;
-  bool available = 5;
 }

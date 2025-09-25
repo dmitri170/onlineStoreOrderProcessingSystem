@@ -1,5 +1,6 @@
 package com.example.OrderService.security;
 
+import com.example.OrderService.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

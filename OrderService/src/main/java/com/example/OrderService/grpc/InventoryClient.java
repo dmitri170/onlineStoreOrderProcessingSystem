@@ -1,7 +1,7 @@
 package com.example.OrderService.grpc;
 
-import com.example.InventoryService.grpc.stub.InventoryProto;
-import com.example.InventoryService.grpc.stub.InventoryServiceGrpc;
+import com.example.InventroryService.grpc.stub.InventoryProto;
+import com.example.InventroryService.grpc.stub.InventoryServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import jakarta.annotation.PostConstruct;
