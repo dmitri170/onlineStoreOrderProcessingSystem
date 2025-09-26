@@ -1,66 +1,26 @@
 package com.example.InventoryService.dto;
 
-import lombok.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
-@Getter
-@Setter
 @Data
-
 public class ProductDto {
     private Long id;
+
+    @NotBlank(message = "Product name is required")
     private String name;
+
+    @NotNull(message = "Quantity is required")
+    @Min(value = 0, message = "Quantity cannot be negative")
     private Integer quantity;
+
+    @NotNull(message = "Price is required")
+    @Min(value = 0, message = "Price cannot be negative")
     private Double price;
+
+    @NotNull(message = "Sale is required")
+    @Min(value = 0, message = "Sale cannot be negative")
     private Double sale;
-
-    public ProductDto() {
-    }
-
-    public ProductDto(Long id, String name, Integer quantity, Double price, Double sale) {
-        this.id = id;
-        this.name = name;
-        this.quantity = quantity;
-        this.price = price;
-        this.sale = sale;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public Double getSale() {
-        return sale;
-    }
-
-    public void setSale(Double sale) {
-        this.sale = sale;
-    }
 }

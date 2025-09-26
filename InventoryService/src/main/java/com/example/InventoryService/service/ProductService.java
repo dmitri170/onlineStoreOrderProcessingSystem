@@ -4,6 +4,7 @@ import com.example.InventoryService.dto.ProductAvailability;
 import com.example.InventoryService.dto.ProductDto;
 import com.example.InventoryService.model.ProductEntity;
 import com.example.InventoryService.repository.ProductRepository;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,15 +15,11 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ProductService {
 
     private final ProductRepository productRepository;
     private final ModelMapper modelMapper;
-
-    public ProductService(ProductRepository productRepository, ModelMapper modelMapper) {
-        this.productRepository = productRepository;
-        this.modelMapper = modelMapper;
-    }
 
     public List<ProductDto> getAllProducts() {
         return productRepository.findAll().stream()
@@ -32,11 +29,11 @@ public class ProductService {
 
     public ProductDto getProductById(Long id) {
         ProductEntity productEntity = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
         return convertToDto(productEntity);
     }
 
-    public Optional<ProductEntity> getProductInfoForOrder(Long productId) {
+    public Optional<ProductEntity> getProductEntityById(Long productId) {
         return productRepository.findById(productId);
     }
 
@@ -48,12 +45,21 @@ public class ProductService {
 
     public ProductDto updateProduct(Long id, ProductDto productDto) {
         ProductEntity existingProductEntity = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
 
-        existingProductEntity.setName(productDto.getName());
-        existingProductEntity.setQuantity(productDto.getQuantity());
-        existingProductEntity.setPrice(productDto.getPrice());
-        existingProductEntity.setSale(productDto.getSale());
+        // Обновляем только не-null поля
+        if (productDto.getName() != null) {
+            existingProductEntity.setName(productDto.getName());
+        }
+        if (productDto.getQuantity() != null) {
+            existingProductEntity.setQuantity(productDto.getQuantity());
+        }
+        if (productDto.getPrice() != null) {
+            existingProductEntity.setPrice(productDto.getPrice());
+        }
+        if (productDto.getSale() != null) {
+            existingProductEntity.setSale(productDto.getSale());
+        }
 
         ProductEntity updatedProductEntity = productRepository.save(existingProductEntity);
         return convertToDto(updatedProductEntity);
@@ -61,7 +67,7 @@ public class ProductService {
 
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            throw new RuntimeException("Product not found");
+            throw new RuntimeException("Product not found with id: " + id);
         }
         productRepository.deleteById(id);
     }
@@ -74,11 +80,12 @@ public class ProductService {
                         productEntity.getPrice(),
                         productEntity.getSale(),
                         productEntity.getQuantity(),
-                        productEntity.getQuantity() > 0
+                        productEntity.getQuantity() != null && productEntity.getQuantity() > 0
                 ))
                 .collect(Collectors.toList());
     }
 
+    // Вспомогательные методы для конвертации
     private ProductDto convertToDto(ProductEntity productEntity) {
         return modelMapper.map(productEntity, ProductDto.class);
     }

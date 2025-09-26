@@ -1,62 +1,51 @@
 package com.example.InventoryService.grpc.server;
 
+import com.example.inventory.InventoryServiceGrpc;
+import com.example.inventory.ProductRequest;
+import com.example.inventory.ProductResponse;
 import com.example.InventoryService.model.ProductEntity;
-import com.example.InventoryService.service.ProductService;
-import com.example.InventoryService.grpc.InventoryServiceGrpc;
-import com.example.InventoryService.grpc.InventoryProto;
+import com.example.InventoryService.repository.ProductRepository;
 import io.grpc.stub.StreamObserver;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.Optional;
 
 @GrpcService
+@RequiredArgsConstructor
+@Slf4j
 public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImplBase {
 
-    private final ProductService productService;
-    private static final Logger log = LoggerFactory.getLogger(GrpcServerService.class);
-
-    @Autowired
-    public GrpcServerService(ProductService productService) {
-        this.productService = productService;
-    }
+    private final ProductRepository productRepository;
 
     @Override
-    public void checkAvailability(InventoryProto.ProductRequest request,
-                                  StreamObserver<InventoryProto.ProductResponse> responseObserver) {
-        log.info("Received gRPC request for product ID: {}", request.getProductId());
-
+    public void checkAvailability(ProductRequest request, StreamObserver<ProductResponse> responseObserver) {
         try {
-            Optional<ProductEntity> productOptional = productService.getProductInfoForOrder(request.getProductId());
+            Long productId = request.getProductId();
+            log.info("Received gRPC request for product ID: {}", productId);
 
-            InventoryProto.ProductResponse.Builder responseBuilder = InventoryProto.ProductResponse.newBuilder()
-                    .setProductId(request.getProductId());
+            ProductEntity product = productRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
-            if (productOptional.isPresent()) {
-                ProductEntity productEntity = productOptional.get();
-                responseBuilder
-                        .setPrice(productEntity.getPrice())
-                        .setSale(productEntity.getSale() != null ? productEntity.getSale() : 0.0)
-                        .setQuantity(productEntity.getQuantity());
-                log.info("Product found: ID {}", productEntity.getId());
-            } else {
-                responseBuilder
-                        .setPrice(0.0)
-                        .setSale(0.0)
-                        .setQuantity(0);
-                log.warn("Product with ID {} not found", request.getProductId());
-            }
+            // Строим gRPC ответ
+            ProductResponse response = ProductResponse.newBuilder()
+                    .setProductId(product.getId())
+                    .setName(product.getName() != null ? product.getName() : "")
+                    .setQuantity(product.getQuantity() != null ? product.getQuantity() : 0)
+                    .setPrice(product.getPrice() != null ? product.getPrice() : 0.0)
+                    .setSale(product.getSale() != null ? product.getSale() : 0.0)
+                    .setAvailable(product.getQuantity() != null && product.getQuantity() > 0)
+                    .build();
 
-            InventoryProto.ProductResponse response = responseBuilder.build();
+            log.info("Sending gRPC response for product {}: quantity={}", productId, product.getQuantity());
+
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-            log.info("Response sent for product ID: {}", request.getProductId());
 
         } catch (Exception e) {
-            log.error("Error processing gRPC request for product ID: {}", request.getProductId(), e);
-            responseObserver.onError(e);
+            log.error("Error processing gRPC request: {}", e.getMessage());
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription("Error checking availability: " + e.getMessage())
+                    .asRuntimeException());
         }
     }
 }
