@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -40,14 +39,17 @@ public class UserService {
             return ResponseEntity.badRequest().body("Username already taken");
         }
 
+        if (!registerRequest.getPassword().equals(registerRequest.getConfirmPassword())) {
+            return ResponseEntity.badRequest().body("Passwords do not match");
+        }
+
         Role role = registerRequest.getRole() != null ? registerRequest.getRole() : Role.USER;
 
-        User user = User.builder()
-                .username(registerRequest.getUsername())
-                .email(registerRequest.getEmail())
-                .password(passwordEncoder.encode(registerRequest.getPassword()))
-                .role(role)
-                .build();
+        User user = new User();
+        user.setUsername(registerRequest.getUsername());
+        user.setEmail(registerRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setRole(role);
 
         userRepository.save(user);
         return ResponseEntity.ok("User registered with role: " + role);
@@ -55,7 +57,7 @@ public class UserService {
 
     public ResponseEntity<?> login(LoginRequest request) {
         User user = findByUsername(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");

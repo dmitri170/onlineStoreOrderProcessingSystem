@@ -1,35 +1,27 @@
-server:
-  port: 8080
-
-spring:
-  datasource:
-    url: jdbc:postgresql://order-db:5434/onlineStoreOrderProcessingSystem
-    username: postgres
-    password: root
-  kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-    topics:
-      order-events: order-events
-
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-
 grpc:
   client:
     inventory-service:
-      address: static://inventory-service:9090
-      negotiationType: plaintext
+      address: static://localhost:9090
+      negotiation-type: plaintext
+
+kafka:
+  bootstrap-servers: localhost:9092
+  topics:
+    order-events: orders
 
 jwt:
-  secret: yourSuperSecretKeyThatShouldBeSecure
+  secret: mySecretKey1234567890123456789012345678901234567890
 
-
-
-
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/order_service
+    username: postgres
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true

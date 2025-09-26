@@ -4,6 +4,7 @@ import com.example.OrderService.exception.JwtAuthenticationException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class JwtTokenProvider {
 
     @Value("${jwt.secret}")
@@ -54,12 +56,16 @@ public class JwtTokenProvider {
                     .parseClaimsJws(jwt);
             return true;
         } catch (MalformedJwtException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
             throw new JwtAuthenticationException("Invalid JWT token");
         } catch (ExpiredJwtException e) {
+            log.error("JWT token is expired: {}", e.getMessage());
             throw new JwtAuthenticationException("JWT token is expired");
         } catch (UnsupportedJwtException e) {
+            log.error("JWT token is unsupported: {}", e.getMessage());
             throw new JwtAuthenticationException("JWT token is unsupported");
         } catch (IllegalArgumentException e) {
+            log.error("JWT claims string is empty: {}", e.getMessage());
             throw new JwtAuthenticationException("JWT claims string is empty");
         }
     }
@@ -107,6 +113,7 @@ public class JwtTokenProvider {
 
             return createToken(username, authorities);
         } catch (Exception e) {
+            log.error("Invalid refresh token: {}", e.getMessage());
             throw new JwtAuthenticationException("Invalid refresh token");
         }
     }

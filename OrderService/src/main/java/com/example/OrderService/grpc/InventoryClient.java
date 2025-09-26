@@ -1,38 +1,40 @@
 package com.example.OrderService.grpc;
 
-import com.example.InventroryService.grpc.stub.InventoryProto;
-import com.example.InventroryService.grpc.stub.InventoryServiceGrpc;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import com.example.inventory.InventoryServiceGrpc;
+import com.example.inventory.ProductRequest;
+import com.example.inventory.ProductResponse;
+import io.grpc.StatusRuntimeException;
+import lombok.extern.slf4j.Slf4j;
+import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class InventoryClient {
 
-    private ManagedChannel channel;
+    @GrpcClient("inventory-service")
     private InventoryServiceGrpc.InventoryServiceBlockingStub stub;
 
-    @PostConstruct
-    public void init() {
-        channel = ManagedChannelBuilder.forAddress("localhost", 9090)
-                .usePlaintext()
-                .build();
-        stub = InventoryServiceGrpc.newBlockingStub(channel);
-    }
+    @Retryable(value = StatusRuntimeException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    public ProductResponse checkAvailability(Long productId) {
+        try {
+            log.info("Sending gRPC request for product ID: {}", productId);
 
-    public InventoryProto.ProductResponse checkAvailability(long productId) {
-        InventoryProto.ProductRequest request = InventoryProto.ProductRequest.newBuilder()
-                .setProductId(productId)
-                .build();
-        return stub.checkAvailability(request);
-    }
+            ProductRequest request = ProductRequest.newBuilder()
+                    .setProductId(productId)
+                    .build();
 
-    @PreDestroy
-    public void shutdown() {
-        if (channel != null) {
-            channel.shutdown();
+            ProductResponse response = stub.checkAvailability(request);
+            log.info("gRPC response for product {}: quantity={}, price={}, sale={}",
+                    productId, response.getQuantity(), response.getPrice(), response.getSale());
+
+            return response;
+
+        } catch (StatusRuntimeException e) {
+            log.error("gRPC call failed for product {}: {}", productId, e.getStatus().getDescription());
+            throw new RuntimeException("Failed to check availability for product: " + productId, e);
         }
     }
 }
