@@ -22,17 +22,13 @@ public class OrderService {
         this.orderItemRepository = orderItemRepository;
     }
 
-    public void processOrder(Order order) {
-        orderRepository.save(order);
-    }
-
     public List<OrderDto> getAllOrders() {
-        return orderRepository.findAllByOrderByIdAsc().stream()
+        return orderRepository.findAllByOrderByOrderDateDesc().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    public List<OrderDto> getOrdersByOrderId(Long orderId) {
+    public List<OrderDto> getOrdersByOrderId(String orderId) {
         Optional<Order> order = orderRepository.findByOrderId(orderId);
         return order.map(o -> List.of(convertToDto(o))).orElse(List.of());
     }
@@ -43,7 +39,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    public List<OrderItem> getOrderItemsByOrderId(Long orderId) {
+    public List<OrderItem> getOrderItemsByOrderId(String orderId) {
         return orderItemRepository.findByOrderOrderId(orderId);
     }
 
@@ -69,7 +65,7 @@ public class OrderService {
         dto.setProductId(item.getProductId());
         dto.setQuantity(item.getQuantity());
         dto.setPrice(item.getPrice());
-        dto.setSale(item.getSale());
+        dto.setDiscount(item.getDiscount());
         dto.setItemTotal(item.getItemTotal());
         return dto;
     }

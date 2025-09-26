@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    Optional<Order> findByOrderId(Long orderId);
+    Optional<Order> findByOrderId(String orderId);
 
-    @Query("SELECT o FROM Order o WHERE o.userId = :userId")
+    @Query("SELECT o FROM Order o WHERE o.userId = :userId ORDER BY o.orderDate DESC")
     List<Order> findByUserId(@Param("userId") Long userId);
 
-    List<Order> findAllByOrderByIdAsc();
+    List<Order> findAllByOrderByOrderDateDesc();
 }

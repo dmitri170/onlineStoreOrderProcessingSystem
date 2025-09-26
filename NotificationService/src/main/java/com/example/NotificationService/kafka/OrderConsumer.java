@@ -1,69 +1,75 @@
 package com.example.NotificationService.kafka;
 
 import com.example.NotificationService.entity.Order;
-import com.example.NotificationService.entity.dto.OrderDto;
-import com.example.NotificationService.repository.OrderItemRepository;
+import com.example.NotificationService.entity.OrderItem;
+import com.example.NotificationService.entity.dto.KafkaOrderMessage;
 import com.example.NotificationService.repository.OrderRepository;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.example.NotificationService.repository.OrderItemRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class OrderConsumer {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderConsumer.class);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ObjectMapper objectMapper;
 
+    public OrderConsumer(OrderRepository orderRepository, OrderItemRepository orderItemRepository, ObjectMapper objectMapper) {
+        this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.objectMapper = objectMapper;
+    }
+
     @KafkaListener(topics = "orders", groupId = "notification-group")
     public void consume(String message) {
         try {
-            JsonNode node = objectMapper.readTree(message);
-            String externalOrderId = node.get("orderId").asText();
-            Long userId = node.get("userId").asLong();
+            log.info("Received message from Kafka: {}", message);
 
-            Order order = Order.builder()
-                    .externalOrderId(externalOrderId)
-                    .build();
-            order = orderRepository.save(order);
+            KafkaOrderMessage kafkaMessage = objectMapper.readValue(message, KafkaOrderMessage.class);
 
-            JsonNode items = node.get("items");
-            List<OrderDto> orderItems = new ArrayList<>();
-            for (JsonNode item : items) {
-                OrderDto entity = OrderDto.builder()
-                        .order(order)
-                        .userId(userId) // ✅ просто ID, без создания объекта User
-                        .productId(item.get("productId").asLong())
-                        .quantity(item.get("quantity").asInt())
-                        .price(item.get("price").asDouble())
-                        .sale(item.get("sale").asDouble())
-                        .totalPrice(item.get("price").asDouble() * item.get("quantity").asInt() * (1 - item.get("sale").asDouble()))
-                        .build();
-                orderItems.add(entity);
+            // Создаем и сохраняем заказ
+            Order order = new Order();
+            order.setOrderId(kafkaMessage.getOrderId());
+            order.setUserId(kafkaMessage.getUserId());
+            order.setTotalPrice(kafkaMessage.getTotalPrice());
+            order.setOrderDate(LocalDateTime.parse(kafkaMessage.getOrderDate(),
+                    DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+            Order savedOrder = orderRepository.save(order);
+
+            // Создаем и сохраняем элементы заказа
+            List<OrderItem> orderItems = new ArrayList<>();
+            if (kafkaMessage.getItems() != null) {
+                for (KafkaOrderMessage.OrderItemMessage itemMessage : kafkaMessage.getItems()) {
+                    OrderItem orderItem = new OrderItem();
+                    orderItem.setOrder(savedOrder);
+                    orderItem.setProductId(itemMessage.getProductId());
+                    orderItem.setQuantity(itemMessage.getQuantity());
+                    orderItem.setPrice(itemMessage.getPrice());
+                    orderItem.setDiscount(itemMessage.getDiscount());
+                    orderItem.setItemTotal(itemMessage.getItemTotal());
+                    orderItems.add(orderItem);
+                }
+                orderItemRepository.saveAll(orderItems);
             }
 
-            orderItemRepository.saveAll(orderItems);
-            log.info("Saved {} items for order {}", orderItems.size(), externalOrderId);
+            log.info("Successfully saved order {} with {} items",
+                    savedOrder.getOrderId(), orderItems.size());
 
         } catch (Exception e) {
             log.error("Failed to process message: {}", message, e);
         }
     }
-    /*@KafkaListener(topics = "orders")
-    public void listen(OrderEntity event) {
-        try {
-            notificationService.processOrder(event);
-        } catch (Exception e) {
-            log.error("Error processing order {}", event.getOrderId(), e);
-            // Можно добавить dead-letter queue
-        }
-    }*/
 }

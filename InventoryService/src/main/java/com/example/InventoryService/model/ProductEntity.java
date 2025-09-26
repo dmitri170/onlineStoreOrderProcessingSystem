@@ -4,8 +4,6 @@ package com.example.InventoryService.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Getter
-@Setter
 @Data
 @Builder
 @Entity

@@ -1,6 +1,6 @@
 package com.example.OrderService.service;
 
-import com.example.OrderService.InventoryClient;
+import com.example.OrderService.grpc.InventoryClient;
 import com.example.OrderService.dto.OrderItemDTO;
 import com.example.OrderService.dto.OrderRequest;
 import com.example.OrderService.entity.User;

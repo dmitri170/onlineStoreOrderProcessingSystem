@@ -1,6 +1,5 @@
 package com.example.NotificationService.controller;
 
-import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderItem;
 import com.example.NotificationService.entity.dto.OrderDto;
 import com.example.NotificationService.service.OrderService;
@@ -24,7 +23,7 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public List<OrderDto> getOrdersByOrderId(@PathVariable Long orderId) {
+    public List<OrderDto> getOrdersByOrderId(@PathVariable String orderId) {
         return orderService.getOrdersByOrderId(orderId);
     }
 
@@ -34,7 +33,7 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}/items")
-    public List<OrderItem> getOrderItems(@PathVariable Long orderId) {
+    public List<OrderItem> getOrderItems(@PathVariable String orderId) {
         return orderService.getOrderItemsByOrderId(orderId);
     }
 }

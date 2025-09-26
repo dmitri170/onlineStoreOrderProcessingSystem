@@ -12,8 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Optional;
 
-@GrpcService  // Исправлено: GrpcService (правильно)
-public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImplBase {  // Исправлено: InventoryServiceGrpc (правильно)
+@GrpcService
+public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImplBase {
 
     private final ProductService productService;
     private static final Logger log = LoggerFactory.getLogger(GrpcServerService.class);
