@@ -20,6 +20,17 @@ public class KafkaOrderMessage {
     @JsonProperty("items")
     private List<OrderItemMessage> items;
 
+    // Конструкторы
+    public KafkaOrderMessage() {}
+
+    public KafkaOrderMessage(String orderId, Long userId, BigDecimal totalPrice, String orderDate, List<OrderItemMessage> items) {
+        this.orderId = orderId;
+        this.userId = userId;
+        this.totalPrice = totalPrice;
+        this.orderDate = orderDate;
+        this.items = items;
+    }
+
     // Геттеры и сеттеры
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
@@ -51,6 +62,17 @@ public class KafkaOrderMessage {
 
         @JsonProperty("itemTotal")
         private BigDecimal itemTotal;
+
+        // Конструкторы
+        public OrderItemMessage() {}
+
+        public OrderItemMessage(Long productId, Integer quantity, BigDecimal price, BigDecimal discount, BigDecimal itemTotal) {
+            this.productId = productId;
+            this.quantity = quantity;
+            this.price = price;
+            this.discount = discount;
+            this.itemTotal = itemTotal;
+        }
 
         // Геттеры и сеттеры
         public Long getProductId() { return productId; }

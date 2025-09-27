@@ -30,52 +30,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <!-- Версии для gRPC -->
         <grpc.version>1.59.0</grpc.version>
         <protobuf.version>3.25.1</protobuf.version>
-        <protobuf.plugin.version>0.6.1</protobuf.plugin.version>
-        <grpc.plugin.version>1.59.0</grpc.plugin.version>
-
-        <!-- Убираем os.detected.classifier или задаем дефолтное значение -->
-        <os.detected.classifier>${os.detected.classifier}</os.detected.classifier>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- gRPC BOM -->
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-bom</artifactId>
-                <version>${grpc.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <!-- Protobuf BOM -->
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-bom</artifactId>
-                <version>${protobuf.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.11.0</version>
-                    <configuration>
-                        <source>17</source>
-                        <target>17</target>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 </project>

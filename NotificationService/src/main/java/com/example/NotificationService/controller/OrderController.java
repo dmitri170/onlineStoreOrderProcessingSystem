@@ -3,6 +3,7 @@ package com.example.NotificationService.controller;
 import com.example.NotificationService.entity.OrderItem;
 import com.example.NotificationService.entity.dto.OrderDto;
 import com.example.NotificationService.service.OrderService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,22 +19,32 @@ public class OrderController {
     }
 
     @GetMapping("/all")
-    public List<OrderDto> getAllOrders() {
-        return orderService.getAllOrders();
+    public ResponseEntity<List<OrderDto>> getAllOrders() {
+        List<OrderDto> orders = orderService.getAllOrders();
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/{orderId}")
-    public List<OrderDto> getOrdersByOrderId(@PathVariable String orderId) {
-        return orderService.getOrdersByOrderId(orderId);
+    public ResponseEntity<List<OrderDto>> getOrdersByOrderId(@PathVariable String orderId) {
+        List<OrderDto> orders = orderService.getOrdersByOrderId(orderId);
+        if (orders.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/user/{userId}")
-    public List<OrderDto> getOrdersByUserId(@PathVariable Long userId) {
-        return orderService.getOrdersByUserId(userId);
+    public ResponseEntity<List<OrderDto>> getOrdersByUserId(@PathVariable Long userId) {
+        List<OrderDto> orders = orderService.getOrdersByUserId(userId);
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/{orderId}/items")
-    public List<OrderItem> getOrderItems(@PathVariable String orderId) {
-        return orderService.getOrderItemsByOrderId(orderId);
+    public ResponseEntity<List<OrderItem>> getOrderItems(@PathVariable String orderId) {
+        List<OrderItem> items = orderService.getOrderItemsByOrderId(orderId);
+        if (items.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(items);
     }
 }

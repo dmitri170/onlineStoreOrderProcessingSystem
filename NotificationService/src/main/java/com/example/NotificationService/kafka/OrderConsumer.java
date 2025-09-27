@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,19 +34,30 @@ public class OrderConsumer {
     }
 
     @KafkaListener(topics = "orders", groupId = "notification-group")
+    @Transactional
     public void consume(String message) {
         try {
             log.info("Received message from Kafka: {}", message);
 
             KafkaOrderMessage kafkaMessage = objectMapper.readValue(message, KafkaOrderMessage.class);
 
+            // Проверяем, не существует ли уже заказ с таким orderId
+            if (orderRepository.findByOrderId(kafkaMessage.getOrderId()).isPresent()) {
+                log.warn("Order with id {} already exists", kafkaMessage.getOrderId());
+                return;
+            }
+
             // Создаем и сохраняем заказ
             Order order = new Order();
             order.setOrderId(kafkaMessage.getOrderId());
             order.setUserId(kafkaMessage.getUserId());
-            order.setTotalPrice(kafkaMessage.getTotalPrice());
-            order.setOrderDate(LocalDateTime.parse(kafkaMessage.getOrderDate(),
-                    DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            order.setTotalPrice(kafkaMessage.getTotalPrice() != null ? kafkaMessage.getTotalPrice() : BigDecimal.ZERO);
+
+            // Парсим дату
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+            LocalDateTime orderDate = kafkaMessage.getOrderDate() != null ?
+                    LocalDateTime.parse(kafkaMessage.getOrderDate(), formatter) : LocalDateTime.now();
+            order.setOrderDate(orderDate);
 
             Order savedOrder = orderRepository.save(order);
 
@@ -55,18 +67,17 @@ public class OrderConsumer {
                 for (KafkaOrderMessage.OrderItemMessage itemMessage : kafkaMessage.getItems()) {
                     OrderItem orderItem = new OrderItem();
                     orderItem.setOrder(savedOrder);
-                    orderItem.setProductId(itemMessage.getProductId());
-                    orderItem.setQuantity(itemMessage.getQuantity());
-                    orderItem.setPrice(itemMessage.getPrice());
-                    orderItem.setDiscount(itemMessage.getDiscount());
-                    orderItem.setItemTotal(itemMessage.getItemTotal());
+                    orderItem.setProductId(itemMessage.getProductId() != null ? itemMessage.getProductId() : 0L);
+                    orderItem.setQuantity(itemMessage.getQuantity() != null ? itemMessage.getQuantity() : 0);
+                    orderItem.setPrice(itemMessage.getPrice() != null ? itemMessage.getPrice() : BigDecimal.ZERO);
+                    orderItem.setDiscount(itemMessage.getDiscount() != null ? itemMessage.getDiscount() : BigDecimal.ZERO);
+                    orderItem.setItemTotal(itemMessage.getItemTotal() != null ? itemMessage.getItemTotal() : BigDecimal.ZERO);
                     orderItems.add(orderItem);
                 }
                 orderItemRepository.saveAll(orderItems);
             }
 
-            log.info("Successfully saved order {} with {} items",
-                    savedOrder.getOrderId(), orderItems.size());
+            log.info("Successfully saved order {} with {} items", savedOrder.getOrderId(), orderItems.size());
 
         } catch (Exception e) {
             log.error("Failed to process message: {}", message, e);

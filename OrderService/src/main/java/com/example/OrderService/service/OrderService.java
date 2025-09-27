@@ -8,8 +8,8 @@ import com.example.OrderService.kafka.OrderProducer;
 import com.example.OrderService.message.model.OrderMessage;
 import com.example.OrderService.repository.UserRepository;
 import com.example.inventory.ProductResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,13 +19,20 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
+
 public class OrderService {
 
     private final InventoryClient inventoryClient;
     private final OrderProducer orderProducer;
     private final UserRepository userRepository;
+
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
+    public OrderService(InventoryClient inventoryClient, OrderProducer orderProducer, UserRepository userRepository) {
+        this.inventoryClient = inventoryClient;
+        this.orderProducer = orderProducer;
+        this.userRepository = userRepository;
+    }
 
     public String processOrder(OrderRequest request, String username) {
         log.info("Processing order for user: {}", username);

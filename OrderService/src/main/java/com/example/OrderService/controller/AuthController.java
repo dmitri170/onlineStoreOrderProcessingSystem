@@ -3,7 +3,6 @@ package com.example.OrderService.controller;
 import com.example.OrderService.dto.LoginRequest;
 import com.example.OrderService.dto.RegisterRequest;
 import com.example.OrderService.service.UserService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,9 +10,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
     private final UserService userService;
+
+    public AuthController(UserService userService) {
+        this.userService = userService;
+    }
 
     @PostMapping("/reg")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {

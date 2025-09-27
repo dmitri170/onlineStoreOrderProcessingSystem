@@ -9,13 +9,19 @@ import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @GrpcService
-@RequiredArgsConstructor
-@Slf4j
 public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImplBase {
 
     private final ProductRepository productRepository;
+
+    private static final Logger log = LoggerFactory.getLogger(GrpcServerService.class);
+
+    public GrpcServerService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
 
     @Override
     public void checkAvailability(ProductRequest request, StreamObserver<ProductResponse> responseObserver) {

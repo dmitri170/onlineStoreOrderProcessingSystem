@@ -1,6 +1,5 @@
 package com.example.OrderService.kafka;
 
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -10,12 +9,16 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-@RequiredArgsConstructor
 public class KafkaProducerService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final KafkaTopicsConfig kafkaTopicsConfig;
 
     private static final Logger log = LoggerFactory.getLogger(KafkaProducerService.class);
+
+    public KafkaProducerService(KafkaTemplate<String, Object> kafkaTemplate, KafkaTopicsConfig kafkaTopicsConfig) {
+        this.kafkaTemplate = kafkaTemplate;
+        this.kafkaTopicsConfig = kafkaTopicsConfig;
+    }
 
     public void sendMessage(String topic, String key, Object message) {
         log.info("Sending message to topic: {}, key: {}, message: {}", topic, key, message);
