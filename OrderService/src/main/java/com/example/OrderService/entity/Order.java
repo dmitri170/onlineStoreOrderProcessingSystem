@@ -3,6 +3,7 @@ package com.example.OrderService.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -12,15 +13,35 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_uuid", unique = true)
+    @Column(name = "order_uuid", unique = true, nullable = false)
     private String orderUuid;
 
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
+
+    @Column(name = "order_date", nullable = false)
     private LocalDateTime orderDate;
-    private String status;
+
+    @Column(nullable = false)
+    private String status = "CREATED"; // CREATED, PROCESSED, etc.
+
+    // Если нужна детализация заказа в этой БД, можно добавить связь
+    // @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // private List<OrderItem> items = new ArrayList<>();
+
+    // Конструкторы
+    public Order() {}
+
+    public Order(String orderUuid, Long userId, BigDecimal totalPrice, LocalDateTime orderDate, String status) {
+        this.orderUuid = orderUuid;
+        this.userId = userId;
+        this.totalPrice = totalPrice;
+        this.orderDate = orderDate;
+        this.status = status;
+    }
 
     // Геттеры и сеттеры
     public Long getId() { return id; }

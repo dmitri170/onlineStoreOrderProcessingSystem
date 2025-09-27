@@ -3,6 +3,7 @@ package com.example.OrderService.controller;
 import com.example.OrderService.dto.LoginRequest;
 import com.example.OrderService.dto.RegisterRequest;
 import com.example.OrderService.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,17 +19,21 @@ public class AuthController {
     }
 
     @PostMapping("/reg")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         return userService.registerUser(request);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return userService.login(request);
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody Map<String, String> request) {
-        return userService.refreshToken(request.get("token"));
+        String token = request.get("token");
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.badRequest().body("Token is required");
+        }
+        return userService.refreshToken(token);
     }
 }

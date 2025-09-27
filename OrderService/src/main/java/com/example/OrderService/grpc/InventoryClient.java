@@ -1,9 +1,9 @@
 package com.example.OrderService.grpc;
 
-import com.example.OrderService.service.OrderService;
 import com.example.inventory.InventoryServiceGrpc;
 import com.example.inventory.ProductRequest;
 import com.example.inventory.ProductResponse;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.slf4j.Logger;
@@ -18,10 +18,13 @@ public class InventoryClient {
     @GrpcClient("inventory-service")
     private InventoryServiceGrpc.InventoryServiceBlockingStub stub;
 
-
     private static final Logger log = LoggerFactory.getLogger(InventoryClient.class);
 
-    @Retryable(value = StatusRuntimeException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000))
+    @Retryable(
+            value = {StatusRuntimeException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
     public ProductResponse checkAvailability(Long productId) {
         try {
             log.info("Sending gRPC request for product ID: {}", productId);
@@ -31,12 +34,17 @@ public class InventoryClient {
                     .build();
 
             ProductResponse response = stub.checkAvailability(request);
+
             log.info("gRPC response for product {}: quantity={}, price={}, sale={}",
                     productId, response.getQuantity(), response.getPrice(), response.getSale());
 
             return response;
 
         } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                log.error("Product not found: {}", productId);
+                throw new IllegalArgumentException("Product not found: " + productId, e);
+            }
             log.error("gRPC call failed for product {}: {}", productId, e.getStatus().getDescription());
             throw new RuntimeException("Failed to check availability for product: " + productId, e);
         }

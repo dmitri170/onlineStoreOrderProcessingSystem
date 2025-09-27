@@ -3,8 +3,10 @@ package com.example.OrderService.security;
 import com.example.OrderService.exception.JwtAuthenticationException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,16 +19,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-@Slf4j
 public class JwtTokenProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     @Value("${jwt.secret}")
     private String secret;
+
+    @Value("${jwt.expiration:3600000}")
+    private long validityInMilliseconds;
+
     private Key key;
-    private final long validityInMilliseconds = 3600000;
 
     @PostConstruct
     protected void init() {
+        if (secret.length() < 32) {
+            log.warn("JWT secret is too short. Consider using a longer secret.");
+        }
         byte[] secretBytes = Base64.getEncoder().encode(secret.getBytes());
         this.key = Keys.hmacShaKeyFor(secretBytes);
     }
@@ -35,6 +44,7 @@ public class JwtTokenProvider {
         Claims claims = Jwts.claims().setSubject(username);
         claims.put("auth", authorities.stream()
                 .map(GrantedAuthority::getAuthority)
+                .filter(role -> role.startsWith("ROLE_"))
                 .collect(Collectors.joining(",")));
 
         Date now = new Date();
@@ -55,15 +65,18 @@ public class JwtTokenProvider {
                     .build()
                     .parseClaimsJws(jwt);
             return true;
-        } catch (MalformedJwtException e) {
-            log.error("Invalid JWT token: {}", e.getMessage());
-            throw new JwtAuthenticationException("Invalid JWT token");
         } catch (ExpiredJwtException e) {
-            log.error("JWT token is expired: {}", e.getMessage());
+            log.warn("JWT token is expired: {}", e.getMessage());
             throw new JwtAuthenticationException("JWT token is expired");
         } catch (UnsupportedJwtException e) {
             log.error("JWT token is unsupported: {}", e.getMessage());
             throw new JwtAuthenticationException("JWT token is unsupported");
+        } catch (MalformedJwtException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
+            throw new JwtAuthenticationException("Invalid JWT token");
+        } catch (SignatureException e) {
+            log.error("JWT signature does not match: {}", e.getMessage());
+            throw new JwtAuthenticationException("JWT signature does not match");
         } catch (IllegalArgumentException e) {
             log.error("JWT claims string is empty: {}", e.getMessage());
             throw new JwtAuthenticationException("JWT claims string is empty");
@@ -104,6 +117,7 @@ public class JwtTokenProvider {
 
             return createToken(username, authorities);
         } catch (ExpiredJwtException e) {
+            // Allow refresh of expired token
             String username = e.getClaims().getSubject();
             String auth = e.getClaims().get("auth", String.class);
 
