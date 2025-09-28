@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/order_service_db
+    url: jdbc:postgresql://postgres:5432/order_service_db
     username: postgres
     password: password
   jpa:
@@ -15,7 +15,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -24,7 +24,7 @@ spring:
 grpc:
   client:
     inventory-service:
-      address: static://localhost:9090
+      address: static://inventory-service:9090
       negotiation-type: plaintext
 
 # JWT Secret

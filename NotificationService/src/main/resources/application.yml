@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/notification_service
+    url: jdbc:postgresql://postgres:5432/notification_service_db
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver
@@ -19,7 +19,7 @@ spring:
           lob:
             non_contextual_creation: true
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: notification-group
       auto-offset-reset: earliest
