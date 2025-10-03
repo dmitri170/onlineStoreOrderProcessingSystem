@@ -1,4 +1,4 @@
-package com.example.OrderService.message.model;
+package com.example.NotificationService.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -7,19 +7,24 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderMessage {
+public class KafkaOrderMessage {
+    @JsonProperty("orderId")
     private String orderId;
+
+    @JsonProperty("userId")
     private Long userId;
-    private String username; // ДОБАВИТЬ это поле
+
+    @JsonProperty("totalPrice")
     private BigDecimal totalPrice;
+
+    @JsonProperty("orderDate")
     private String orderDate;
+
+    @JsonProperty("items")
     private List<OrderItemMessage> items;
-
-
 
     @Data
     @AllArgsConstructor

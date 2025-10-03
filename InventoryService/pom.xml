@@ -102,6 +102,8 @@
 					<release>17</release> <!-- Фиксим warning -->
 				</configuration>
 			</plugin>
+
 		</plugins>
+
 	</build>
 </project>

@@ -1,43 +1,31 @@
-package com.example.OrderService.message.model;
+package com.example.NotificationService.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderMessage {
+public class OrderDto {
+    private Long id;
     private String orderId;
     private Long userId;
-    private String username; // ДОБАВИТЬ это поле
     private BigDecimal totalPrice;
-    private String orderDate;
-    private List<OrderItemMessage> items;
-
-
+    private LocalDateTime orderDate;
+    private List<OrderItemDto> items;
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class OrderItemMessage {
-        @JsonProperty("productId")
+    public static class OrderItemDto {
         private Long productId;
-
-        @JsonProperty("quantity")
         private Integer quantity;
-
-        @JsonProperty("price")
         private BigDecimal price;
-
-        @JsonProperty("discount")
         private BigDecimal discount;
-
-        @JsonProperty("itemTotal")
         private BigDecimal itemTotal;
 
     }

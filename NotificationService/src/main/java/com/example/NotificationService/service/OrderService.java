@@ -2,9 +2,10 @@ package com.example.NotificationService.service;
 
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderItem;
-import com.example.NotificationService.entity.dto.OrderDto;
+import com.example.NotificationService.dto.OrderDto;
 import com.example.NotificationService.repository.OrderRepository;
 import com.example.NotificationService.repository.OrderItemRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,15 +15,11 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
-        this.orderRepository = orderRepository;
-        this.orderItemRepository = orderItemRepository;
-    }
 
     public List<OrderDto> getAllOrders() {
         return orderRepository.findAllByOrderByOrderDateDesc().stream()

@@ -1,8 +1,9 @@
 package com.example.NotificationService.controller;
 
 import com.example.NotificationService.entity.OrderItem;
-import com.example.NotificationService.entity.dto.OrderDto;
+import com.example.NotificationService.dto.OrderDto;
 import com.example.NotificationService.service.OrderService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,13 +11,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
+@RequiredArgsConstructor
 public class OrderController {
 
     private final OrderService orderService;
-
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
 
     @GetMapping("/all")
     public ResponseEntity<List<OrderDto>> getAllOrders() {

@@ -5,6 +5,7 @@ import com.example.inventory.ProductRequest;
 import com.example.inventory.ProductResponse;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,12 +14,11 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class InventoryClient {
 
     @GrpcClient("inventory-service")
     private InventoryServiceGrpc.InventoryServiceBlockingStub stub;
-
-    private static final Logger log = LoggerFactory.getLogger(InventoryClient.class);
 
     @Retryable(
             value = {StatusRuntimeException.class},

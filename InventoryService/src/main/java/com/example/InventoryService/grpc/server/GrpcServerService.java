@@ -1,27 +1,23 @@
 package com.example.InventoryService.grpc.server;
 
+import com.example.InventoryService.model.ProductEntity;
+import com.example.InventoryService.mapper.GrpcMapper;
+import com.example.InventoryService.repository.ProductRepository;
 import com.example.inventory.InventoryServiceGrpc;
 import com.example.inventory.ProductRequest;
 import com.example.inventory.ProductResponse;
-import com.example.InventoryService.model.ProductEntity;
-import com.example.InventoryService.repository.ProductRepository;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.server.service.GrpcService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
-@GrpcService
+@Service
+@RequiredArgsConstructor
+@Slf4j
 public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImplBase {
 
     private final ProductRepository productRepository;
-
-    private static final Logger log = LoggerFactory.getLogger(GrpcServerService.class);
-
-    public GrpcServerService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
+    private final GrpcMapper grpcMapper;
 
     @Override
     public void checkAvailability(ProductRequest request, StreamObserver<ProductResponse> responseObserver) {
@@ -32,15 +28,8 @@ public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImpl
             ProductEntity product = productRepository.findById(productId)
                     .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
-            // Строим gRPC ответ
-            ProductResponse response = ProductResponse.newBuilder()
-                    .setProductId(product.getId())
-                    .setName(product.getName() != null ? product.getName() : "")
-                    .setQuantity(product.getQuantity() != null ? product.getQuantity() : 0)
-                    .setPrice(product.getPrice() != null ? product.getPrice() : 0.0)
-                    .setSale(product.getSale() != null ? product.getSale() : 0.0)
-                    .setAvailable(product.getQuantity() != null && product.getQuantity() > 0)
-                    .build();
+            // Используем маппер для преобразования
+            ProductResponse response = grpcMapper.toProductResponse(product);
 
             log.info("Sending gRPC response for product {}: quantity={}", productId, product.getQuantity());
 

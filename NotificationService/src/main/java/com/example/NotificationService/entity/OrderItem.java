@@ -1,8 +1,14 @@
 package com.example.NotificationService.entity;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "order_items")
 public class OrderItem {
@@ -29,37 +35,5 @@ public class OrderItem {
     @Column(name = "item_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal itemTotal;
 
-    // Конструкторы
-    public OrderItem() {}
 
-    public OrderItem(Order order, Long productId, Integer quantity, BigDecimal price, BigDecimal discount, BigDecimal itemTotal) {
-        this.order = order;
-        this.productId = productId;
-        this.quantity = quantity;
-        this.price = price;
-        this.discount = discount;
-        this.itemTotal = itemTotal;
-    }
-
-    // Геттеры и сеттеры
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public Order getOrder() { return order; }
-    public void setOrder(Order order) { this.order = order; }
-
-    public Long getProductId() { return productId; }
-    public void setProductId(Long productId) { this.productId = productId; }
-
-    public Integer getQuantity() { return quantity; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
-
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
-
-    public BigDecimal getDiscount() { return discount; }
-    public void setDiscount(BigDecimal discount) { this.discount = discount; }
-
-    public BigDecimal getItemTotal() { return itemTotal; }
-    public void setItemTotal(BigDecimal itemTotal) { this.itemTotal = itemTotal; }
 }
