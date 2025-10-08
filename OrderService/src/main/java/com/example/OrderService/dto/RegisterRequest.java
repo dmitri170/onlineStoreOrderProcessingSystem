@@ -5,7 +5,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-
+/**
+ * DTO для запроса регистрации нового пользователя.
+ * Содержит все необходимые данные для создания учетной записи.
+ */
 @Data
 public class RegisterRequest {
     @NotBlank(message = "Username is required")

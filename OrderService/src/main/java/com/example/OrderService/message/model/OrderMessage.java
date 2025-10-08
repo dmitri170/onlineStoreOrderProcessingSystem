@@ -7,20 +7,26 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
-
+/**
+ * Модель сообщения для Kafka, представляющая заказ.
+ * Содержит все необходимые данные для обработки заказа в Notification Service.
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderMessage {
     private String orderId;
     private Long userId;
-    private String username; // ДОБАВИТЬ это поле
+    private String username;
     private BigDecimal totalPrice;
     private String orderDate;
     private List<OrderItemMessage> items;
 
 
-
+    /**
+     * Модель сообщения для одного товара в заказе.
+     * Содержит детальную информацию о товаре и его стоимости.
+     */
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

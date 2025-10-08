@@ -5,6 +5,7 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,11 +18,13 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.*;
 import java.util.stream.Collectors;
-
+/**
+ * Компонент для работы с JWT токенами.
+ * Отвечает за создание, валидацию и обновление JWT токенов аутентификации.
+ */
 @Component
+@Slf4j
 public class JwtTokenProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     @Value("${jwt.secret}")
     private String secret;
@@ -31,6 +34,9 @@ public class JwtTokenProvider {
 
     private Key key;
 
+    /**
+     * Инициализирует ключ для подписи токенов после создания бина.
+     */
     @PostConstruct
     protected void init() {
         if (secret.length() < 32) {
@@ -39,7 +45,13 @@ public class JwtTokenProvider {
         byte[] secretBytes = Base64.getEncoder().encode(secret.getBytes());
         this.key = Keys.hmacShaKeyFor(secretBytes);
     }
-
+    /**
+     * Создает новый JWT токен для пользователя.
+     *
+     * @param username имя пользователя
+     * @param authorities список прав пользователя
+     * @return JWT токен в виде строки
+     */
     public String createToken(String username, Collection<? extends GrantedAuthority> authorities) {
         Claims claims = Jwts.claims().setSubject(username);
         claims.put("auth", authorities.stream()
@@ -57,7 +69,13 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
-
+    /**
+     * Проверяет валидность JWT токена.
+     *
+     * @param jwt токен для проверки
+     * @return true если токен валиден, false в противном случае
+     * @throws JwtAuthenticationException если токен невалиден
+     */
     public boolean validateToken(String jwt) {
         try {
             Jwts.parserBuilder()
@@ -82,7 +100,12 @@ public class JwtTokenProvider {
             throw new JwtAuthenticationException("JWT claims string is empty");
         }
     }
-
+    /**
+     * Создает объект аутентификации из JWT токена.
+     *
+     * @param token JWT токен
+     * @return объект аутентификации Spring Security
+     */
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -99,7 +122,13 @@ public class JwtTokenProvider {
 
         return new UsernamePasswordAuthenticationToken(username, "", authorities);
     }
-
+    /**
+     * Обновляет JWT токен.
+     *
+     * @param oldToken старый токен для обновления
+     * @return новый JWT токен
+     * @throws JwtAuthenticationException если старый токен невалиден
+     */
     public String refreshToken(String oldToken) {
         try {
             Claims claims = Jwts.parserBuilder()
@@ -131,7 +160,12 @@ public class JwtTokenProvider {
             throw new JwtAuthenticationException("Invalid refresh token");
         }
     }
-
+    /**
+     * Извлекает имя пользователя из JWT токена.
+     *
+     * @param token JWT токен
+     * @return имя пользователя
+     */
     public String getUsernameFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)

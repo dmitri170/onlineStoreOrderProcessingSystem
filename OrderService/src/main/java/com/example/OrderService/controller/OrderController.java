@@ -10,13 +10,24 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * REST контроллер для обработки запросов связанных с заказами.
+ * Предоставляет endpoint для создания новых заказов.
+ */
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class OrderController {
 
     private final OrderService orderService;
-
+    /**
+     * Создает новый заказ для аутентифицированного пользователя.
+     * Требует валидный JWT токен в заголовке Authorization.
+     *
+     * @param request данные заказа
+     * @param authentication данные аутентификации пользователя
+     * @return ответ с UUID созданного заказа
+     */
     @PostMapping("/order")
     public ResponseEntity<?> createOrder(
             @Valid @RequestBody OrderRequest request,
@@ -25,7 +36,7 @@ public class OrderController {
         String username = authentication.getName();
         String orderId = orderService.processOrder(request, username);
         return ResponseEntity.ok(Map.of(
-                "message", "Order created successfully",
+                "message", "Заказ успешно создан",
                 "orderId", orderId
         ));
     }

@@ -2,49 +2,99 @@ package com.example.InventoryService.controller;
 
 import com.example.InventoryService.dto.ProductDto;
 import com.example.InventoryService.service.ProductService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST контроллер для управления товарами через HTTP API.
+ * Работает исключительно с DTO.
+ */
 @RestController
 @RequestMapping("/api/products")
-@RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService productService;
 
+    /**
+     * Конструктор контроллера товаров.
+     *
+     * @param productService сервис для работы с товарами
+     */
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    /**
+     * Возвращает список всех товаров.
+     *
+     * @return список DTO товаров
+     */
     @GetMapping
     public ResponseEntity<List<ProductDto>> getAllProducts() {
         List<ProductDto> products = productService.getAllProducts();
         return ResponseEntity.ok(products);
     }
 
-    @PostMapping
-    public ResponseEntity<ProductDto> createProduct(@Valid @RequestBody ProductDto productDto) {
-        ProductDto savedProduct = productService.createProduct(productDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedProduct);
-    }
-
+    /**
+     * Находит товар по идентификатору.
+     *
+     * @param id идентификатор товара
+     * @return DTO товара или 404 если не найден
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> getProduct(@PathVariable Long id) {
-        ProductDto product = productService.getProductById(id);
-        return ResponseEntity.ok(product);
+    public ResponseEntity<ProductDto> getProductById(@PathVariable Long id) {
+        try {
+            ProductDto product = productService.getProductById(id);
+            return ResponseEntity.ok(product);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
+    /**
+     * Создает новый товар.
+     *
+     * @param productDto DTO с данными товара
+     * @return созданный товар в виде DTO
+     */
+    @PostMapping
+    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
+        ProductDto createdProduct = productService.createProduct(productDto);
+        return ResponseEntity.ok(createdProduct);
+    }
+
+    /**
+     * Обновляет существующий товар.
+     *
+     * @param id идентификатор товара
+     * @param productDto новые данные товара
+     * @return обновленный товар в виде DTO или 404 если не найден
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDto> updateProduct(@PathVariable Long id,
-                                                    @Valid @RequestBody ProductDto productDto) {
-        ProductDto updatedProduct = productService.updateProduct(id, productDto);
-        return ResponseEntity.ok(updatedProduct);
+    public ResponseEntity<ProductDto> updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
+        try {
+            ProductDto updatedProduct = productService.updateProduct(id, productDto);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
+    /**
+     * Удаляет товар по идентификатору.
+     *
+     * @param id идентификатор товара
+     * @return 200 OK при успешном удалении или 404 если не найден
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
+        try {
+            productService.deleteProduct(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

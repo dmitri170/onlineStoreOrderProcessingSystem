@@ -7,6 +7,11 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+/**
+ * DTO для передачи данных о заказе через REST API.
+ * Используется для read-only доступа к данным заказов.
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,7 +22,10 @@ public class OrderDto {
     private BigDecimal totalPrice;
     private LocalDateTime orderDate;
     private List<OrderItemDto> items;
-
+    /**
+     * DTO для элемента заказа.
+     * Содержит информацию о конкретном товаре в заказе.
+     */
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

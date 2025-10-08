@@ -6,6 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+
+/**
+ * Сущность элемента заказа в системе уведомлений.
+ * Хранит информацию о конкретных товарах в заказе.
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

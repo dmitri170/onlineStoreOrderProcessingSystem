@@ -4,7 +4,7 @@ import com.example.NotificationService.dto.KafkaOrderMessage;
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderItem;
 import com.example.NotificationService.mapper.OrderMapper;
-import com.example.NotificationService.service.OrderProcessingService;
+import com.example.NotificationService.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +13,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * Kafka Consumer для обработки сообщений о заказах от Order Service.
+ * Сохраняет заказы в базу данных для аналитики и уведомлений.
+ */
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -20,34 +24,39 @@ public class OrderConsumer {
 
     private final ObjectMapper objectMapper;
     private final OrderMapper orderMapper;
-    private final OrderProcessingService orderProcessingService;
+    private final OrderService orderService;
 
+    /**
+     * Обрабатывает сообщения из Kafka топика orders.
+     *
+     * @param message JSON строка с данными заказа
+     */
     @KafkaListener(topics = "orders", groupId = "notification-group")
     public void consume(String message) {
         try {
-            log.info("Received message from Kafka: {}", message);
+            log.info("Получено сообщение из Kafka: {}", message);
 
             KafkaOrderMessage kafkaMessage = objectMapper.readValue(message, KafkaOrderMessage.class);
             String orderId = kafkaMessage.getOrderId();
 
             // Проверяем существование заказа
-            if (orderProcessingService.orderExists(orderId)) {
-                log.warn("Order with id {} already exists", orderId);
+            if (orderService.orderExists(orderId)) {
+                log.warn("Заказ с id {} уже существует", orderId);
                 return;
             }
 
-            // Маппим в entity
+            // Преобразуем в сущности
             Order order = orderMapper.toOrderEntity(kafkaMessage);
             List<OrderItem> orderItems = orderMapper.toOrderItemEntities(kafkaMessage, order);
 
             // Сохраняем в одной транзакции
-            orderProcessingService.processOrder(order, orderItems);
+            orderService.processOrder(order, orderItems);
 
-            log.info("Successfully processed order: {}", orderId);
+            log.info("Успешно обработан заказ: {}", orderId);
 
         } catch (Exception e) {
-            log.error("Failed to process message: {}", message, e);
-            // Можно добавить retry логику или dead letter queue
+            log.error("Ошибка обработки сообщения: {}", message, e);
+            // Можно добавить логику retry или отправку в dead letter queue
         }
     }
 }

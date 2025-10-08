@@ -7,64 +7,89 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * DTO для передачи данных о товаре через REST API.
+ * Содержит валидацию входных данных.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductDto {
+    /** Идентификатор товара */
     private Long id;
 
-    @NotBlank(message = "Product name is required")
+    /** Название товара (обязательное поле) */
+    @NotBlank(message = "Название товара обязательно")
     private String name;
 
-    @NotNull(message = "Quantity is required")
-    @Min(value = 0, message = "Quantity cannot be negative")
+    /** Количество товара (не может быть отрицательным) */
+    @NotNull(message = "Количество обязательно")
+    @Min(value = 0, message = "Количество не может быть отрицательным")
     private Integer quantity;
 
-    @NotNull(message = "Price is required")
-    @Min(value = 0, message = "Price cannot be negative")
+    /** Цена товара (не может быть отрицательной) */
+    @NotNull(message = "Цена обязательна")
+    @Min(value = 0, message = "Цена не может быть отрицательной")
     private Double price;
 
-    @NotNull(message = "Sale is required")
-    @Min(value = 0, message = "Sale cannot be negative")
+    /** Скидка на товар (не может быть отрицательной) */
+    @NotNull(message = "Скидка обязательна")
+    @Min(value = 0, message = "Скидка не может быть отрицательной")
     private Double sale;
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public @NotBlank(message = "Product name is required") String getName() {
+    /**
+     * @return название товара
+     */
+    public @NotBlank(message = "Название товара обязательно") String getName() {
         return name;
     }
 
-    public void setName(@NotBlank(message = "Product name is required") String name) {
+    /**
+     * @param name название товара
+     */
+    public void setName(@NotBlank(message = "Название товара обязательно") String name) {
         this.name = name;
     }
 
-    public @NotNull(message = "Quantity is required") @Min(value = 0, message = "Quantity cannot be negative") Integer getQuantity() {
+    /**
+     * @return количество товара
+     */
+    public @NotNull(message = "Количество обязательно") @Min(value = 0, message = "Количество не может быть отрицательным") Integer getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(@NotNull(message = "Quantity is required") @Min(value = 0, message = "Quantity cannot be negative") Integer quantity) {
+    /**
+     * @param quantity количество товара
+     */
+    public void setQuantity(@NotNull(message = "Количество обязательно") @Min(value = 0, message = "Количество не может быть отрицательным") Integer quantity) {
         this.quantity = quantity;
     }
 
-    public @NotNull(message = "Price is required") @Min(value = 0, message = "Price cannot be negative") Double getPrice() {
+    /**
+     * @return цена товара
+     */
+    public @NotNull(message = "Цена обязательна") @Min(value = 0, message = "Цена не может быть отрицательной") Double getPrice() {
         return price;
     }
 
-    public void setPrice(@NotNull(message = "Price is required") @Min(value = 0, message = "Price cannot be negative") Double price) {
+    /**
+     * @param price цена товара
+     */
+    public void setPrice(@NotNull(message = "Цена обязательна") @Min(value = 0, message = "Цена не может быть отрицательной") Double price) {
         this.price = price;
     }
 
-    public @NotNull(message = "Sale is required") @Min(value = 0, message = "Sale cannot be negative") Double getSale() {
+    /**
+     * @return скидка на товар
+     */
+    public @NotNull(message = "Скидка обязательна") @Min(value = 0, message = "Скидка не может быть отрицательной") Double getSale() {
         return sale;
     }
 
-    public void setSale(@NotNull(message = "Sale is required") @Min(value = 0, message = "Sale cannot be negative") Double sale) {
+    /**
+     * @param sale скидка на товар
+     */
+    public void setSale(@NotNull(message = "Скидка обязательна") @Min(value = 0, message = "Скидка не может быть отрицательной") Double sale) {
         this.sale = sale;
     }
 }

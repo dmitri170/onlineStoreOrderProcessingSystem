@@ -7,6 +7,11 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
+
+/**
+ * DTO для сообщений Kafka от Order Service.
+ * Содержит полную информацию о заказе для сохранения в базу данных.
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,6 +31,10 @@ public class KafkaOrderMessage {
     @JsonProperty("items")
     private List<OrderItemMessage> items;
 
+    /**
+     * DTO для элемента заказа в сообщении Kafka.
+     * Содержит информацию об отдельном товаре в заказе.
+     */
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

@@ -6,7 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-
+/**
+ * DTO для передачи информации об ошибках в HTTP ответах.
+ * Содержит статус, сообщение и временную метку ошибки.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @AllArgsConstructor

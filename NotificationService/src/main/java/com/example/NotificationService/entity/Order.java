@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+/**
+ * Сущность заказа в системе уведомлений.
+ * Сохраняет информацию о заказах, полученных из Kafka от Order Service.
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

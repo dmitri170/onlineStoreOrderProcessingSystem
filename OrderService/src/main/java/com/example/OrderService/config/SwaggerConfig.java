@@ -8,16 +8,26 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Конфигурация Swagger/OpenAPI для документации REST API.
+ * Настраивает информацию о API и схему аутентификации JWT.
+ */
 @Configuration
 public class SwaggerConfig {
 
+    /**
+     * Настраивает OpenAPI документацию для микросервиса Order Service.
+     * Включает информацию о API и настройки JWT аутентификации.
+     *
+     * @return сконфигурированный объект OpenAPI
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
                         .title("Order Service API")
                         .version("1.0")
-                        .description("API for order processing in online store"))
+                        .description("API для обработки заказов в интернет-магазине"))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth", new SecurityScheme()

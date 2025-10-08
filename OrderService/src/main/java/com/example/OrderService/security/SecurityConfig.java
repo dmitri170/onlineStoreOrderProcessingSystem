@@ -21,7 +21,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
-
+/**
+ * Конфигурация безопасности Spring Security.
+ * Настраивает аутентификацию, авторизацию и CORS для приложения.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -30,7 +33,13 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userDetailsService;
-
+    /**
+     * Настраивает цепочку фильтров безопасности HTTP.
+     *
+     * @param http объект для настройки безопасности
+     * @return сконфигурированная цепочка фильтров
+     * @throws Exception если конфигурация не удалась
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -48,7 +57,11 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
+    /**
+     * Настраивает политику CORS для кросс-доменных запросов.
+     *
+     * @return источник конфигурации CORS
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -61,7 +74,11 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
+    /**
+     * Настраивает провайдер аутентификации.
+     *
+     * @return провайдер аутентификации DAO
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -69,12 +86,22 @@ public class SecurityConfig {
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
-
+    /**
+     * Настраивает кодировщик паролей.
+     *
+     * @return кодировщик BCrypt
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
+    /**
+     * Настраивает менеджер аутентификации.
+     *
+     * @param config конфигурация аутентификации
+     * @return менеджер аутентификации
+     * @throws Exception если конфигурация не удалась
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();

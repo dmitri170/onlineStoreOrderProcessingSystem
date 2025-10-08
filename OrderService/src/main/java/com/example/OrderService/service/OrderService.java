@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Основной сервис для обработки заказов покупателей.
+ * Отвечает за проверку наличия товаров, расчет стоимости и отправку заказов в Kafka.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -30,20 +34,27 @@ public class OrderService {
     private final OrderProducer orderProducer;
     private final UserRepository userRepository;
 
+
+    /**
+     * Обрабатывает новый заказ от пользователя.
+     * Генерирует UUID, проверяет наличие товаров, рассчитывает стоимость и отправляет в Kafka.
+     *
+     * @param request данные заказа
+     * @param username имя пользователя, оформляющего заказ
+     * @return UUID созданного заказа
+     * @throws IllegalArgumentException если пользователь не найден
+     * @throws InsufficientStockException если товаров недостаточно на складе
+     */
     public String processOrder(OrderRequest request, String username) {
         String orderUuid = UUID.randomUUID().toString();
-        log.info("[Order: {}] === START ORDER PROCESSING ===", orderUuid);
-        log.info("[Order: {}] User: {}, Items count: {}", orderUuid, username, request.getItems().size());
+        log.info("[Заказ: {}] === НАЧАЛО ОБРАБОТКИ ЗАКАЗА ===", orderUuid);
+        log.info("[Заказ: {}] Пользователь: {}, Количество товаров: {}", orderUuid, username, request.getItems().size());
 
         try {
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> {
-                        log.error("[Order: {}] User not found: {}", orderUuid, username);
-                        return new IllegalArgumentException("User not found: " + username);
-                    });
-            log.info("[Order: {}] User found: ID={}", orderUuid, user.getId());
+            User user = findUser(username, orderUuid);
+            log.info("[Заказ: {}] Пользователь найден: ID={}", orderUuid, user.getId());
 
-            // Обрабатываем все items через Stream API
+            // Обрабатываем все товары через Stream API
             List<OrderItemProcessingResult> processingResults = request.getItems().stream()
                     .map(item -> processOrderItem(item, orderUuid))
                     .collect(Collectors.toList());
@@ -55,35 +66,39 @@ public class OrderService {
             BigDecimal total = calculateTotal(processingResults);
             List<OrderMessage.OrderItemMessage> orderItems = createOrderItems(processingResults);
 
-            log.info("[Order: {}] All products checked successfully. Total: {}, Items count: {}",
+            log.info("[Заказ: {}] Все товары проверены успешно. Итого: {}, Количество позиций: {}",
                     orderUuid, total, orderItems.size());
 
             // Создаем и отправляем сообщение в Kafka
             OrderMessage message = createOrderMessage(orderUuid, user, total, orderItems);
             orderProducer.sendOrder(message);
 
-            log.info("[Order: {}] Order sent to Kafka. Notification Service will save it to database", orderUuid);
-            log.info("[Order: {}] === ORDER PROCESSING COMPLETED ===", orderUuid);
+            log.info("[Заказ: {}] Заказ отправлен в Kafka. Notification Service сохранит его в базу данных", orderUuid);
+            log.info("[Заказ: {}] === ОБРАБОТКА ЗАКАЗА ЗАВЕРШЕНА ===", orderUuid);
 
             return orderUuid;
 
         } catch (Exception e) {
-            log.error("[Order: {}] === ORDER PROCESSING FAILED === Error: {}", orderUuid, e.getMessage(), e);
+            log.error("[Заказ: {}] === ОШИБКА ПРИ ОБРАБОТКЕ ЗАКАЗА === Ошибка: {}", orderUuid, e.getMessage(), e);
             throw e;
         }
     }
 
     /**
-     * Обработка одного элемента заказа
+     * Обрабатывает один товар в заказе: проверяет наличие и рассчитывает стоимость.
+     *
+     * @param item данные товара
+     * @param orderUuid UUID заказа для логирования
+     * @return результат обработки товара
      */
     private OrderItemProcessingResult processOrderItem(OrderItemDTO item, String orderUuid) {
-        log.info("[Order: {}] Checking availability for product ID: {}", orderUuid, item.getProductId());
+        log.info("[Заказ: {}] Проверка наличия товара ID: {}", orderUuid, item.getProductId());
 
         ProductResponse product = inventoryClient.checkAvailability(item.getProductId());
 
         if (product.getQuantity() < item.getQuantity()) {
             String errorMessage = String.format(
-                    "Not enough stock for product ID %d. Available: %d, requested: %d",
+                    "Недостаточно товара ID %d. В наличии: %d, запрошено: %d",
                     item.getProductId(), product.getQuantity(), item.getQuantity()
             );
             return new OrderItemProcessingResult(
@@ -97,7 +112,7 @@ public class OrderService {
         BigDecimal discount = BigDecimal.valueOf(product.getSale());
         BigDecimal itemTotal = calculateItemTotal(price, discount, item.getQuantity());
 
-        log.debug("[Order: {}] Product {} processed. Price: {}, Discount: {}, ItemTotal: {}",
+        log.debug("[Заказ: {}] Товар {} обработан. Цена: {}, Скидка: {}, Итого: {}",
                 orderUuid, item.getProductId(), price, discount, itemTotal);
 
         return new OrderItemProcessingResult(
@@ -108,20 +123,27 @@ public class OrderService {
     }
 
     /**
-     * Проверка доступности всех товаров
+     * Проверяет доступность всех товаров в заказе.
+     *
+     * @param results результаты обработки товаров
+     * @param orderUuid UUID заказа для логирования
+     * @throws InsufficientStockException если какой-либо товар недоступен
      */
     private void validateStockAvailability(List<OrderItemProcessingResult> results, String orderUuid) {
         results.stream()
                 .filter(result -> !result.isAvailable())
                 .findFirst()
                 .ifPresent(result -> {
-                    log.error("[Order: {}] {}", orderUuid, result.getErrorMessage());
+                    log.error("[Заказ: {}] {}", orderUuid, result.getErrorMessage());
                     throw new InsufficientStockException(result.getErrorMessage());
                 });
     }
 
     /**
-     * Расчет общей суммы заказа
+     * Рассчитывает общую сумму заказа.
+     *
+     * @param results результаты обработки товаров
+     * @return общая сумма заказа
      */
     private BigDecimal calculateTotal(List<OrderItemProcessingResult> results) {
         return results.stream()
@@ -130,7 +152,10 @@ public class OrderService {
     }
 
     /**
-     * Создание элементов заказа для Kafka сообщения
+     * Создает элементы заказа для Kafka сообщения.
+     *
+     * @param results результаты обработки товаров
+     * @return список элементов заказа
      */
     private List<OrderMessage.OrderItemMessage> createOrderItems(List<OrderItemProcessingResult> results) {
         return results.stream()
@@ -145,7 +170,29 @@ public class OrderService {
     }
 
     /**
-     * Расчет стоимости одного товара с учетом скидки
+     * Находит пользователя по имени.
+     *
+     * @param username имя пользователя
+     * @param orderUuid UUID заказа для логирования
+     * @return найденный пользователь
+     * @throws IllegalArgumentException если пользователь не найден
+     */
+    private User findUser(String username, String orderUuid) {
+        log.debug("[Заказ: {}] Поиск пользователя: {}", orderUuid, username);
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.error("[Заказ: {}] Пользователь не найден: {}", orderUuid, username);
+                    return new IllegalArgumentException("Пользователь не найден: " + username);
+                });
+    }
+
+    /**
+     * Рассчитывает стоимость одного товара с учетом скидки.
+     *
+     * @param price цена товара
+     * @param discount скидка (от 0 до 1)
+     * @param quantity количество
+     * @return общая стоимость позиции
      */
     private BigDecimal calculateItemTotal(BigDecimal price, BigDecimal discount, Integer quantity) {
         return price
@@ -154,7 +201,13 @@ public class OrderService {
     }
 
     /**
-     * Создание сообщения для Kafka
+     * Создает сообщение для Kafka.
+     *
+     * @param orderUuid UUID заказа
+     * @param user пользователь
+     * @param total общая сумма
+     * @param orderItems элементы заказа
+     * @return сообщение для отправки в Kafka
      */
     private OrderMessage createOrderMessage(String orderUuid, User user, BigDecimal total,
                                             List<OrderMessage.OrderItemMessage> orderItems) {
@@ -169,17 +222,31 @@ public class OrderService {
     }
 
     /**
-     * Вспомогательный класс для обработки результатов
+     * Вспомогательный класс для хранения результатов обработки товара.
+     * Содержит информацию о товаре, его доступности и расчетах стоимости.
      */
     @Data
     @AllArgsConstructor
     private static class OrderItemProcessingResult {
+        /** ID товара */
         private Long productId;
+
+        /** Количество товара */
         private Integer quantity;
+
+        /** Цена за единицу */
         private BigDecimal price;
+
+        /** Скидка (от 0 до 1) */
         private BigDecimal discount;
+
+        /** Общая стоимость позиции */
         private BigDecimal itemTotal;
+
+        /** Доступен ли товар в нужном количестве */
         private boolean available;
+
+        /** Сообщение об ошибке, если товар недоступен */
         private String errorMessage;
     }
 }
