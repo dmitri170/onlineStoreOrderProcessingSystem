@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 /**
  * DTO для информации о доступности товара.
  * Используется для проверки наличия товаров перед созданием заказа.
@@ -19,10 +21,10 @@ public class ProductAvailability {
     private String name;
 
     /** Цена товара */
-    private Double price;
+    private BigDecimal price;
 
     /** Скидка на товар */
-    private Double sale;
+    private BigDecimal sale;
 
     /** Количество товара на складе */
     private Integer quantity;

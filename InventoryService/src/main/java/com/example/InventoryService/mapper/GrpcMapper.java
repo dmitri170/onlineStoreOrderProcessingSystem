@@ -4,6 +4,8 @@ import com.example.InventoryService.entity.ProductEntity;
 import com.example.inventory.ProductResponse;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 /**
  * Маппер для преобразования между сущностями ProductEntity и gRPC сообщениями.
  * Обрабатывает преобразование данных и установку значений по умолчанию.
@@ -22,8 +24,8 @@ public class GrpcMapper {
                 .setProductId(product.getId())
                 .setName(getSafeString(product.getName()))
                 .setQuantity(getSafeInteger(product.getQuantity()))
-                .setPrice(getSafeDouble(product.getPrice()))
-                .setSale(getSafeDouble(product.getSale()))
+                .setPrice(getSafeDoubleFromBigDecimal(product.getPrice()))
+                .setSale(getSafeDoubleFromBigDecimal(product.getSale()))
                 .setAvailable(isProductAvailable(product))
                 .build();
     }
@@ -64,7 +66,7 @@ public class GrpcMapper {
      * @param value исходное значение с плавающей точкой
      * @return исходное значение или 0.0 если null
      */
-    private double getSafeDouble(Double value) {
-        return value != null ? value : 0.0;
+    private double getSafeDoubleFromBigDecimal(BigDecimal value) {
+        return value != null ? value.doubleValue() : 0.0;
     }
 }

@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 /**
  * DTO для передачи данных о товаре через REST API.
  * Содержит валидацию входных данных.
@@ -30,12 +32,12 @@ public class ProductDto {
     /** Цена товара (не может быть отрицательной) */
     @NotNull(message = "Цена обязательна")
     @Min(value = 0, message = "Цена не может быть отрицательной")
-    private Double price;
+    private BigDecimal price;
 
     /** Скидка на товар (не может быть отрицательной) */
     @NotNull(message = "Скидка обязательна")
     @Min(value = 0, message = "Скидка не может быть отрицательной")
-    private Double sale;
+    private BigDecimal sale;
 
     /**
      * @return название товара
@@ -68,28 +70,28 @@ public class ProductDto {
     /**
      * @return цена товара
      */
-    public @NotNull(message = "Цена обязательна") @Min(value = 0, message = "Цена не может быть отрицательной") Double getPrice() {
+    public @NotNull(message = "Цена обязательна") @Min(value = 0, message = "Цена не может быть отрицательной") BigDecimal getPrice() {
         return price;
     }
 
     /**
      * @param price цена товара
      */
-    public void setPrice(@NotNull(message = "Цена обязательна") @Min(value = 0, message = "Цена не может быть отрицательной") Double price) {
+    public void setPrice(@NotNull(message = "Цена обязательна") @Min(value = 0, message = "Цена не может быть отрицательной") BigDecimal price) {
         this.price = price;
     }
 
     /**
      * @return скидка на товар
      */
-    public @NotNull(message = "Скидка обязательна") @Min(value = 0, message = "Скидка не может быть отрицательной") Double getSale() {
+    public @NotNull(message = "Скидка обязательна") @Min(value = 0, message = "Скидка не может быть отрицательной") BigDecimal getSale() {
         return sale;
     }
 
     /**
      * @param sale скидка на товар
      */
-    public void setSale(@NotNull(message = "Скидка обязательна") @Min(value = 0, message = "Скидка не может быть отрицательной") Double sale) {
+    public void setSale(@NotNull(message = "Скидка обязательна") @Min(value = 0, message = "Скидка не может быть отрицательной") BigDecimal sale) {
         this.sale = sale;
     }
 }
