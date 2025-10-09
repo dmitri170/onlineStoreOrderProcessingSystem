@@ -1,22 +1,22 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "com.example.orderservice.grpc.stub";
-option java_outer_classname = "OrderProto";
+option java_package = "com.example.inventory";
+option java_outer_classname = "InventoryProto";
 
-package order;
+package inventory;
 
-service OrderService {
-  rpc CreateOrder(OrderRequest) returns (OrderResponse);
+service InventoryService {
+  rpc CheckAvailability(ProductRequest) returns (ProductResponse);
 }
 
-message OrderRequest {
+message ProductRequest {
   int64 productId = 1;
-  int32 quantity = 2;
 }
 
-message OrderResponse {
-  int64 orderId = 1;
-  string status = 2;
-  string message = 3;
+message ProductResponse {
+  int32 quantity = 1;
+  double price = 2;
+  double sale = 3;
+  bool available = 4;
 }
