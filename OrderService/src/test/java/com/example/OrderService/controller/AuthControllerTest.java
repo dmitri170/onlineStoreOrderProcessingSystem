@@ -43,8 +43,9 @@ class AuthControllerTest {
         registerRequest.setPassword("password123");
         registerRequest.setConfirmPassword("password123");
 
+        // ИСПРАВЛЕНИЕ: Убрали generic тип
         when(userService.registerUser(any(RegisterRequest.class)))
-                .thenReturn(ResponseEntity.ok(Map.of("message", "Пользователь успешно зарегистрирован")));
+                .thenReturn(ResponseEntity.ok().body(Map.of("message", "Пользователь успешно зарегистрирован")));
 
         // Act & Assert
         mockMvc.perform(post("/auth/reg")
@@ -77,8 +78,9 @@ class AuthControllerTest {
         loginRequest.setUsername("testuser");
         loginRequest.setPassword("password123");
 
+        // ИСПРАВЛЕНИЕ: Убрали generic тип
         when(userService.login(any(LoginRequest.class)))
-                .thenReturn(ResponseEntity.ok(Map.of("token", "jwt-token", "username", "testuser")));
+                .thenReturn(ResponseEntity.ok().body(Map.of("token", "jwt-token", "username", "testuser")));
 
         // Act & Assert
         mockMvc.perform(post("/auth/login")

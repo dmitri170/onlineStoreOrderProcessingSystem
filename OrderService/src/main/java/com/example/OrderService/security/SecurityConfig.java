@@ -1,6 +1,8 @@
 package com.example.OrderService.security;
 
 import lombok.RequiredArgsConstructor;
+import net.devh.boot.grpc.server.security.authentication.BasicGrpcAuthenticationReader;
+import net.devh.boot.grpc.server.security.authentication.GrpcAuthenticationReader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +23,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
+
 /**
  * Конфигурация безопасности Spring Security.
  * Настраивает аутентификацию, авторизацию и CORS для приложения.
@@ -33,6 +37,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userDetailsService;
+
     /**
      * Настраивает цепочку фильтров безопасности HTTP.
      *
@@ -46,6 +51,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Явная настройка анонимной аутентификации
+                .anonymous(anonymous -> anonymous
+                        .principal("anonymousUser")
+                        .authorities("ROLE_ANONYMOUS")
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Для Swagger
@@ -57,6 +67,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
+
     /**
      * Настраивает политику CORS для кросс-доменных запросов.
      *
@@ -65,15 +76,37 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // Для продакшена замените "*" на конкретные домены
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:3000",  // React dev server
+                "http://localhost:8080",  // Spring Boot app
+                "http://localhost:3001",  // Другие возможные порты
+                "https://yourdomain.com"  // Продакшен домен
+        ));
+
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Disposition"
+        ));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // Кэшировать preflight запросы на 1 час
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
     /**
      * Настраивает провайдер аутентификации.
      *
@@ -86,6 +119,7 @@ public class SecurityConfig {
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
+
     /**
      * Настраивает кодировщик паролей.
      *
@@ -95,6 +129,7 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     /**
      * Настраивает менеджер аутентификации.
      *
@@ -106,4 +141,15 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
-} 
+
+    /**
+     * Настраивает GrpcAuthenticationReader для gRPC безопасности.
+     * Этот бин требуется grpc-spring-boot-starter для работы с аутентификацией.
+     *
+     * @return GrpcAuthenticationReader для базовой аутентификации
+     */
+    @Bean
+    public GrpcAuthenticationReader grpcAuthenticationReader() {
+        return new BasicGrpcAuthenticationReader();
+    }
+}
