@@ -55,4 +55,4 @@ public class KafkaOrderMessage {
         private BigDecimal itemTotal;
 
     }
-}
+} 

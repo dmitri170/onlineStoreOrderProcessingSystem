@@ -190,4 +190,4 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден с id: " + id));
         userRepository.delete(user);
     }
-}
+} 

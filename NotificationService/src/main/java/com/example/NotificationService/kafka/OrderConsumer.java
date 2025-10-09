@@ -59,4 +59,4 @@ public class OrderConsumer {
             // Можно добавить логику retry или отправку в dead letter queue
         }
     }
-}
+} 

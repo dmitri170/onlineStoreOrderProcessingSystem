@@ -69,4 +69,4 @@ public class GrpcMapper {
     private double getSafeDoubleFromBigDecimal(BigDecimal value) {
         return value != null ? value.doubleValue() : 0.0;
     }
-}
+} 

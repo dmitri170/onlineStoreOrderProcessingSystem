@@ -39,4 +39,4 @@ public class ProductEntity {
         this.price = price;
         this.sale = sale;
     }
-}
+} 

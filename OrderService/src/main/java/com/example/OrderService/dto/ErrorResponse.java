@@ -31,4 +31,4 @@ public class ErrorResponse {
         this.path = path;
         this.timestamp = LocalDateTime.now();
     }
-}
+} 

@@ -49,4 +49,4 @@ public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImpl
                     .asRuntimeException());
         }
     }
-}
+} 

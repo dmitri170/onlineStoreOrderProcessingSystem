@@ -32,4 +32,4 @@ public class NullPropertyUtils {
 
         return emptyNames.toArray(new String[0]);
     }
-}
+} 
