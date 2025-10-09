@@ -105,5 +105,6 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error").value("Неверные учетные данные"));
+
     }
 }
