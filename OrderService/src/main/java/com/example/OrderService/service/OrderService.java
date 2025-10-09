@@ -249,4 +249,4 @@ public class OrderService {
         /** Сообщение об ошибке, если товар недоступен */
         private String errorMessage;
     }
-}
+} 

@@ -50,4 +50,4 @@ public class OrderProducer {
             throw new RuntimeException("Не удалось отправить заказ в Kafka", e);
         }
     }
-}
+} 

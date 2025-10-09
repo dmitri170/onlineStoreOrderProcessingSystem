@@ -31,4 +31,4 @@ public class ProductAvailability {
 
     /** Доступен ли товар для заказа */
     private Boolean isAvailable;
-}
+} 

@@ -94,4 +94,4 @@ public class ProductDto {
     public void setSale(@NotNull(message = "Скидка обязательна") @Min(value = 0, message = "Скидка не может быть отрицательной") BigDecimal sale) {
         this.sale = sale;
     }
-}
+} 

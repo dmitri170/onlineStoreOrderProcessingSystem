@@ -1,11 +1,10 @@
-# Используем официальный JDK-образ
 FROM openjdk:17-jdk-slim
 
-# Указываем рабочую директорию внутри контейнера
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем собранный jar-файл
-COPY build/libs/*.jar app.jar
+# Копируем JAR файл из target/ (Maven) вместо build/libs/ (Gradle)
+COPY target/*.jar app.jar
 
 # Указываем точку входа
 ENTRYPOINT ["java", "-jar", "app.jar"]

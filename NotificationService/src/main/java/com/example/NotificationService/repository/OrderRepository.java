@@ -44,4 +44,4 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * @return список заказов отсортированных по дате
      */
     List<Order> findAllByOrderByOrderDateDesc();
-}
+} 

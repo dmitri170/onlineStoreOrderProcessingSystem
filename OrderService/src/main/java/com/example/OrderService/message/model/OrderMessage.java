@@ -47,4 +47,4 @@ public class OrderMessage {
         private BigDecimal itemTotal;
 
     }
-}
+} 

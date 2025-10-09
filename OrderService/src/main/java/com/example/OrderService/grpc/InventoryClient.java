@@ -54,4 +54,4 @@ public class InventoryClient {
             throw new RuntimeException("Не удалось проверить доступность товара: " + productId, e);
         }
     }
-}
+} 

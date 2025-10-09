@@ -28,4 +28,4 @@ public class RegisterRequest {
     private String confirmPassword;
 
     private Role role = Role.USER;
-}
+} 
