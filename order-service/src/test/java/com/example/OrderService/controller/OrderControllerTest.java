@@ -2,7 +2,7 @@ package com.example.OrderService.controller;
 
 import com.example.OrderService.dto.OrderRequest;
 import com.example.OrderService.dto.OrderItemDTO;
-import com.example.OrderService.service.OrderService;
+import com.example.OrderService.service.OrderServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ class OrderControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private OrderService orderService;
+    private OrderServiceImpl orderServiceImpl;
 
     @Test
     @WithMockUser(username = "testuser", roles = "USER")
@@ -47,7 +47,7 @@ class OrderControllerTest {
         OrderRequest orderRequest = new OrderRequest();
         orderRequest.setItems(List.of(item));
 
-        when(orderService.processOrder(any(OrderRequest.class), anyString()))
+        when(orderServiceImpl.processOrder(any(OrderRequest.class), anyString()))
                 .thenReturn("order-123");
 
         // Act & Assert
