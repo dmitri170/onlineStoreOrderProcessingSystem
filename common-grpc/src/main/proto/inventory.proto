@@ -12,6 +12,7 @@ service InventoryService {
 
 message BulkProductRequest {
   repeated ProductRequestItem items = 1;
+  string rqUid=2;
 }
 
 message ProductRequestItem {

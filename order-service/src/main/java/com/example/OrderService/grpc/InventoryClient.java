@@ -30,12 +30,13 @@ public class InventoryClient {
     /**
      * Проверяет доступность всех товаров в заказе
      */
-    @Retryable(value = StatusRuntimeException.class, backoff = @Backoff(delay = 1000))
+    @Retryable(value = StatusRuntimeException.class, maxAttempts = 3, backoff = @Backoff(delay = 1000))
     public BulkProductResponse checkBulkAvailability(List<OrderItemDTO> orderItems, String orderUuid) {
         try {
             log.info("[Заказ: {}] Отправка bulk gRPC запроса для {} товаров", orderUuid, orderItems.size());
 
-            BulkProductRequest.Builder requestBuilder = BulkProductRequest.newBuilder();
+            BulkProductRequest.Builder requestBuilder = BulkProductRequest.newBuilder()
+                    .setRqUid(orderUuid);  // Добавляем rqUid
 
             for (OrderItemDTO item : orderItems) {
                 ProductRequestItem requestItem = ProductRequestItem.newBuilder()

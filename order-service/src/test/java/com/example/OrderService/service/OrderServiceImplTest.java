@@ -8,7 +8,6 @@ import com.example.OrderService.grpc.InventoryClient;
 import com.example.OrderService.kafka.OrderProducer;
 import com.example.OrderService.message.model.OrderMessage;
 import com.example.OrderService.repository.UserRepository;
-import com.example.inventory.ProductResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

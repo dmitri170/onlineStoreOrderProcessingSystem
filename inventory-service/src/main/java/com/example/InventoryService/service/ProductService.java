@@ -4,12 +4,19 @@ import com.example.InventoryService.dto.ProductAvailability;
 import com.example.InventoryService.dto.ProductDto;
 import com.example.InventoryService.entity.ProductEntity;
 import com.example.InventoryService.repository.ProductRepository;
+import com.example.inventory.BulkProductRequest;
+import com.example.inventory.BulkProductResponse;
+import com.example.inventory.ProductRequestItem;
+import com.example.inventory.ProductResponseItem;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -19,12 +26,11 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class ProductService {
 
     private final ProductRepository productRepository;
     private final ModelMapper modelMapper;
-
-    // === Публичные методы для REST API (работают с DTO) ===
 
     /**
      * Возвращает список всех товаров.
@@ -118,7 +124,101 @@ public class ProductService {
     }
 
     /**
-     * Проверяет доступность нескольких товаров (для gRPC сервиса).
+     * Проверяет доступность нескольких товаров в рамках одного запроса (для gRPC сервиса).
+     *
+     * @param request bulk запрос с товарами
+     * @param rqUid идентификатор запроса для логирования
+     * @return bulk ответ с доступными и недоступными товарами
+     */
+    public BulkProductResponse checkBulkAvailability(BulkProductRequest request, String rqUid) {
+        log.info("[Inventory: RqUid {}] Начало bulk проверки доступности {} товаров",
+                rqUid, request.getItemsCount());
+
+        BulkProductResponse.Builder responseBuilder = BulkProductResponse.newBuilder();
+
+        for (ProductRequestItem requestItem : request.getItemsList()) {
+            ProductResponseItem responseItem = checkProductAvailability(requestItem, rqUid);
+
+            if (responseItem.getIsAvailable()) {
+                responseBuilder.addAvailableItems(responseItem);
+            } else {
+                responseBuilder.addUnavailableItems(responseItem);
+            }
+        }
+
+        log.info("[Inventory: RqUid {}] Bulk проверка завершена: доступно {}, недоступно {}",
+                rqUid, responseBuilder.getAvailableItemsCount(), responseBuilder.getUnavailableItemsCount());
+
+        return responseBuilder.build();
+    }
+
+    /**
+     * Проверяет доступность одного товара
+     */
+    private ProductResponseItem checkProductAvailability(ProductRequestItem requestItem, String rqUid) {
+        Long productId = requestItem.getProductId();
+        Integer requestedQuantity = requestItem.getRequestedQuantity();
+
+        log.debug("[Inventory: RqUid {}] Проверка товара ID: {}, запрошено: {}",
+                rqUid, productId, requestedQuantity);
+
+        Optional<ProductEntity> productOpt = productRepository.findById(productId);
+
+        if (productOpt.isEmpty()) {
+            log.warn("[Inventory: RqUid {}] Товар не найден: ID {}", rqUid, productId);
+            return createUnavailableResponse(requestItem, "Товар не найден");
+        }
+
+        ProductEntity product = productOpt.get();
+
+        if (product.getQuantity() < requestedQuantity) {
+            log.warn("[Inventory: RqUid {}] Недостаточно товара: ID {} (доступно: {}, запрошено: {})",
+                    rqUid, productId, product.getQuantity(), requestedQuantity);
+            return createUnavailableResponse(requestItem, product, "Недостаточно товара");
+        }
+
+        log.debug("[Inventory: RqUid {}] Товар доступен: ID {}, количество: {}",
+                rqUid, productId, product.getQuantity());
+
+        return createAvailableResponse(requestItem, product);
+    }
+
+    /**
+     * Создает ответ для доступного товара
+     */
+    private ProductResponseItem createAvailableResponse(ProductRequestItem requestItem, ProductEntity product) {
+        return ProductResponseItem.newBuilder()
+                .setProductId(product.getId())
+                .setName(product.getName())
+                .setAvailableQuantity(product.getQuantity())
+                .setRequestedQuantity(requestItem.getRequestedQuantity())
+                .setPrice(getSafeDoubleFromBigDecimal(product.getPrice()))
+                .setSale(getSafeDoubleFromBigDecimal(product.getSale()))
+                .setIsAvailable(true)
+                .build();
+    }
+
+    /**
+     * Создает ответ для недоступного товара
+     */
+    private ProductResponseItem createUnavailableResponse(ProductRequestItem requestItem, ProductEntity product, String reason) {
+        return ProductResponseItem.newBuilder()
+                .setProductId(product != null ? product.getId() : requestItem.getProductId())
+                .setName(product != null ? product.getName() : "Неизвестный товар")
+                .setAvailableQuantity(product != null ? product.getQuantity() : 0)
+                .setRequestedQuantity(requestItem.getRequestedQuantity())
+                .setPrice(product != null ? getSafeDoubleFromBigDecimal(product.getPrice()) : 0.0)
+                .setSale(product != null ? getSafeDoubleFromBigDecimal(product.getSale()) : 0.0)
+                .setIsAvailable(false)
+                .build();
+    }
+
+    private ProductResponseItem createUnavailableResponse(ProductRequestItem requestItem, String reason) {
+        return createUnavailableResponse(requestItem, null, reason);
+    }
+
+    /**
+     * Проверяет доступность нескольких товаров (для REST API).
      *
      * @param productIds список идентификаторов товаров
      * @return список информации о доступности товаров
@@ -157,4 +257,10 @@ public class ProductService {
     private ProductEntity convertToEntity(ProductDto productDto) {
         return modelMapper.map(productDto, ProductEntity.class);
     }
-} 
+    /**
+     * Вспомогательный метод для безопасного преобразования BigDecimal в double
+     */
+    private double getSafeDoubleFromBigDecimal(BigDecimal value) {
+        return value != null ? value.doubleValue() : 0.0;
+    }
+}
