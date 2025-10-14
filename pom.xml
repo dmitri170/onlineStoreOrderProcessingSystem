@@ -12,9 +12,9 @@
     <name>Online Store Parent</name>
 
     <modules>
-        <module>OrderService</module>
-        <module>InventoryService</module>
-        <module>NotificationService</module>
+        <module>order-service</module>
+        <module>inventory-service</module>
+        <module>notification-service</module>
         <module>common-grpc</module>
     </modules>
 

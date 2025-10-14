@@ -16,20 +16,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
  * Юнит тесты для сервиса заказов.
  */
 @ExtendWith(MockitoExtension.class)
-class OrderServiceTest {
+class OrderServiceImplTest {
 
     @Mock
     private InventoryClient inventoryClient;
@@ -41,7 +39,7 @@ class OrderServiceTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private OrderService orderService;
+    private OrderServiceImpl orderServiceImpl;
 
     private User testUser;
     private OrderRequest validOrderRequest;
@@ -77,7 +75,7 @@ class OrderServiceTest {
         doNothing().when(orderProducer).sendOrder(any(OrderMessage.class));
 
         // Act
-        String orderId = orderService.processOrder(validOrderRequest, "testuser");
+        String orderId = orderServiceImpl.processOrder(validOrderRequest, "testuser");
 
         // Assert
         assertNotNull(orderId);
@@ -93,7 +91,7 @@ class OrderServiceTest {
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            orderService.processOrder(validOrderRequest, "unknown");
+            orderServiceImpl.processOrder(validOrderRequest, "unknown");
         });
 
         verify(userRepository, times(1)).findByUsername("unknown");
@@ -117,7 +115,7 @@ class OrderServiceTest {
 
         // Act & Assert
         assertThrows(InsufficientStockException.class, () -> {
-            orderService.processOrder(validOrderRequest, "testuser");
+            orderServiceImpl.processOrder(validOrderRequest, "testuser");
         });
 
         verify(userRepository, times(1)).findByUsername("testuser");
@@ -153,7 +151,7 @@ class OrderServiceTest {
         doNothing().when(orderProducer).sendOrder(any(OrderMessage.class));
 
         // Act
-        String orderId = orderService.processOrder(multiItemRequest, "testuser");
+        String orderId = orderServiceImpl.processOrder(multiItemRequest, "testuser");
 
         // Assert
         assertNotNull(orderId);
