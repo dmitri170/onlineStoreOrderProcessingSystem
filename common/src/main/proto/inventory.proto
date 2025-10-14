@@ -8,6 +8,7 @@ package inventory;
 
 service InventoryService {
   rpc CheckAvailability(BulkProductRequest) returns (BulkProductResponse);
+  rpc ReserveProducts(ReserveProductsRequest) returns (ReserveProductsResponse);
 }
 
 message BulkProductRequest {
@@ -21,8 +22,9 @@ message ProductRequestItem {
 }
 
 message BulkProductResponse {
-  repeated ProductResponseItem available_items = 1;
-  repeated ProductResponseItem unavailable_items = 2;
+  string rqUid=1;
+  repeated ProductResponseItem available_items = 2;
+  repeated ProductResponseItem unavailable_items = 3;
 }
 
 message ProductResponseItem {
@@ -33,4 +35,16 @@ message ProductResponseItem {
   double sale = 5;
   bool is_available = 6;
   int32 requested_quantity = 7;
+}
+message ReserveProductsRequest {
+  string order_id = 1;
+  repeated ProductRequestItem items = 2;
+}
+
+message ReserveProductsResponse {
+  string order_id = 1;
+  bool success = 2;
+  string message = 3;
+  repeated ProductResponseItem reserved_items = 4;
+  repeated ProductResponseItem failed_items = 5;
 }

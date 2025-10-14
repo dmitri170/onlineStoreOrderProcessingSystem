@@ -1,6 +1,5 @@
 package com.example.NotificationService.mapper;
 
-import com.example.NotificationService.dto.KafkaOrderMessage;
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderItem;
 import org.junit.jupiter.api.BeforeEach;
