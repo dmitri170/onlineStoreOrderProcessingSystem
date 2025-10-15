@@ -6,9 +6,7 @@ import com.example.OrderService.entity.User;
 import com.example.OrderService.exception.InsufficientStockException;
 import com.example.OrderService.grpc.InventoryClient;
 import com.example.OrderService.kafka.OrderProducer;
-import com.example.OrderService.message.model.OrderMessage;
 import com.example.OrderService.repository.UserRepository;
-import com.example.inventory.ProductResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,7 +70,7 @@ class OrderServiceImplTest {
         // Arrange
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(inventoryClient.checkAvailability(1L)).thenReturn(availableProduct);
-        doNothing().when(orderProducer).sendOrder(any(OrderMessage.class));
+        doNothing().when(orderProducer).sendOrder(any(OrderMessageDto.class));
 
         // Act
         String orderId = orderServiceImpl.processOrder(validOrderRequest, "testuser");
@@ -81,7 +79,7 @@ class OrderServiceImplTest {
         assertNotNull(orderId);
         verify(userRepository, times(1)).findByUsername("testuser");
         verify(inventoryClient, times(1)).checkAvailability(1L);
-        verify(orderProducer, times(1)).sendOrder(any(OrderMessage.class));
+        verify(orderProducer, times(1)).sendOrder(any(OrderMessageDto.class));
     }
 
     @Test
@@ -148,7 +146,7 @@ class OrderServiceImplTest {
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(inventoryClient.checkAvailability(1L)).thenReturn(availableProduct);
         when(inventoryClient.checkAvailability(2L)).thenReturn(product2);
-        doNothing().when(orderProducer).sendOrder(any(OrderMessage.class));
+        doNothing().when(orderProducer).sendOrder(any(OrderMessageDto.class));
 
         // Act
         String orderId = orderServiceImpl.processOrder(multiItemRequest, "testuser");
@@ -157,6 +155,6 @@ class OrderServiceImplTest {
         assertNotNull(orderId);
         verify(inventoryClient, times(1)).checkAvailability(1L);
         verify(inventoryClient, times(1)).checkAvailability(2L);
-        verify(orderProducer, times(1)).sendOrder(any(OrderMessage.class));
+        verify(orderProducer, times(1)).sendOrder(any(OrderMessageDto.class));
     }
 }

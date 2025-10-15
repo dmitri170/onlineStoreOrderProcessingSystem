@@ -1,7 +1,7 @@
 package com.example.InventoryService.mapper;
 
 import com.example.InventoryService.entity.ProductEntity;
-import com.example.inventory.ProductResponse;
+import com.example.inventory.ProductResponseItem;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -14,19 +14,38 @@ import java.math.BigDecimal;
 public class GrpcMapper {
 
     /**
-     * Преобразует сущность ProductEntity в gRPC ответ ProductResponse.
+     * Преобразует сущность ProductEntity в gRPC ответ ProductResponseItem.
      *
      * @param product сущность товара
      * @return gRPC ответ с информацией о товаре
      */
-    public ProductResponse toProductResponse(ProductEntity product) {
-        return ProductResponse.newBuilder()
+    public ProductResponseItem toProductResponseItem(ProductEntity product) {
+        return ProductResponseItem.newBuilder()
                 .setProductId(product.getId())
                 .setName(getSafeString(product.getName()))
-                .setQuantity(getSafeInteger(product.getQuantity()))
+                .setAvailableQuantity(getSafeInteger(product.getQuantity()))
                 .setPrice(getSafeDoubleFromBigDecimal(product.getPrice()))
                 .setSale(getSafeDoubleFromBigDecimal(product.getSale()))
-                .setAvailable(isProductAvailable(product))
+                .setIsAvailable(isProductAvailable(product))
+                .build();
+    }
+
+    /**
+     * Преобразует сущность ProductEntity в gRPC ответ ProductResponseItem с указанием запрошенного количества.
+     *
+     * @param product сущность товара
+     * @param requestedQuantity запрошенное количество
+     * @return gRPC ответ с информацией о товаре
+     */
+    public ProductResponseItem toProductResponseItem(ProductEntity product, int requestedQuantity) {
+        return ProductResponseItem.newBuilder()
+                .setProductId(product.getId())
+                .setName(getSafeString(product.getName()))
+                .setAvailableQuantity(getSafeInteger(product.getQuantity()))
+                .setRequestedQuantity(requestedQuantity)
+                .setPrice(getSafeDoubleFromBigDecimal(product.getPrice()))
+                .setSale(getSafeDoubleFromBigDecimal(product.getSale()))
+                .setIsAvailable(isProductAvailable(product, requestedQuantity))
                 .build();
     }
 
@@ -38,6 +57,17 @@ public class GrpcMapper {
      */
     private boolean isProductAvailable(ProductEntity product) {
         return product.getQuantity() != null && product.getQuantity() > 0;
+    }
+
+    /**
+     * Проверяет доступность товара в нужном количестве.
+     *
+     * @param product товар для проверки
+     * @param requestedQuantity запрошенное количество
+     * @return true если товар доступен в нужном количестве, false в противном случае
+     */
+    private boolean isProductAvailable(ProductEntity product, int requestedQuantity) {
+        return product.getQuantity() != null && product.getQuantity() >= requestedQuantity;
     }
 
     /**
@@ -69,4 +99,4 @@ public class GrpcMapper {
     private double getSafeDoubleFromBigDecimal(BigDecimal value) {
         return value != null ? value.doubleValue() : 0.0;
     }
-} 
+}

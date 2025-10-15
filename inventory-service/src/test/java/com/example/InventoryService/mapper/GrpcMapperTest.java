@@ -2,6 +2,7 @@ package com.example.InventoryService.mapper;
 
 import com.example.InventoryService.entity.ProductEntity;
 import com.example.inventory.ProductResponse;
+import com.example.inventory.ProductResponseItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +30,7 @@ class GrpcMapperTest {
         product.setId(1L);
 
         // Act
-        ProductResponse response = grpcMapper.toProductResponse(product);
+        ProductResponseItem response = grpcMapper.toProductResponseItem(product);
 
         // Assert
         assertNotNull(response);

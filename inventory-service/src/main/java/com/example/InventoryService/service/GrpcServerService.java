@@ -2,9 +2,8 @@ package com.example.InventoryService.service;
 
 import com.example.InventoryService.entity.ProductEntity;
 import com.example.InventoryService.mapper.GrpcMapper;
-import com.example.inventory.InventoryServiceGrpc;
-import com.example.inventory.ProductRequest;
-import com.example.inventory.ProductResponse;
+import com.example.inventory.*;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,33 +19,41 @@ import org.springframework.stereotype.Service;
 public class GrpcServerService extends InventoryServiceGrpc.InventoryServiceImplBase {
 
     private final ProductService productService;
-    private final GrpcMapper grpcMapper;
 
-    /**
-     * Обрабатывает запрос на проверку доступности товара.
-     *
-     * @param request запрос с идентификатором товара
-     * @param responseObserver наблюдатель для отправки ответа
-     */
     @Override
-    public void checkAvailability(ProductRequest request, StreamObserver<ProductResponse> responseObserver) {
+    public void checkAvailability(BulkProductRequest request, StreamObserver<BulkProductResponse> responseObserver) {
+        String rqUid = request.getRqUid();
+        log.info("[Inventory: RqUid {}] Получен bulk запрос на проверку {} товаров",
+                rqUid, request.getItemsCount());
+
         try {
-            Long productId = request.getProductId();
-            log.info("Получен gRPC запрос для товара ID: {}", productId);
-
-            // Используем внутренний метод ProductService
-            ProductEntity product = productService.findProductEntityById(productId);
-            ProductResponse response = grpcMapper.toProductResponse(product);
-
-            log.info("Отправка gRPC ответа для товара {}: количество={}", productId, product.getQuantity());
+            BulkProductResponse response = productService.checkBulkAvailability(request,rqUid);
             responseObserver.onNext(response);
             responseObserver.onCompleted();
 
+            log.info("[Inventory: RqUid {}] Bulk проверка завершена успешно", rqUid);
+
         } catch (Exception e) {
-            log.error("Ошибка обработки gRPC запроса: {}", e.getMessage());
-            responseObserver.onError(io.grpc.Status.INTERNAL
-                    .withDescription("Ошибка проверки доступности: " + e.getMessage())
-                    .asRuntimeException());
+            log.error("[Inventory: RqUid {}] Ошибка при bulk проверке: {}", rqUid, e.getMessage(), e);
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
+        }
+    }
+    @Override
+    public void reserveProducts(ReserveProductsRequest request, StreamObserver<ReserveProductsResponse> responseObserver) {
+        String orderId = request.getOrderId();
+        log.info("[Inventory] Получен запрос на резервирование товаров для заказа: {}", orderId);
+
+        try {
+            ReserveProductsResponse response = productService.reserveProducts(request);
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+
+            log.info("[Inventory] Резервирование для заказа {} завершено: {}", orderId,
+                    response.getSuccess() ? "успешно" : "с ошибками");
+
+        } catch (Exception e) {
+            log.error("[Inventory] Ошибка при резервировании товаров для заказа {}: {}", orderId, e.getMessage(), e);
+            responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 } 

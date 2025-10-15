@@ -1,6 +1,5 @@
 package com.example.NotificationService.kafka;
 
-import com.example.NotificationService.dto.KafkaOrderMessage;
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderItem;
 import com.example.NotificationService.mapper.OrderMapper;
@@ -32,12 +31,11 @@ public class OrderConsumer {
      * @param message JSON строка с данными заказа
      */
     @KafkaListener(topics = "orders", groupId = "notification-group")
-    public void consume(String message) {
+    public void consume(KafkaOrderMessage message) {
         try {
             log.info("Получено сообщение из Kafka: {}", message);
 
-            KafkaOrderMessage kafkaMessage = objectMapper.readValue(message, KafkaOrderMessage.class);
-            String orderId = kafkaMessage.getOrderId();
+            String orderId = message.getOrderId();
 
             // Проверяем существование заказа
             if (orderService.orderExists(orderId)) {
@@ -46,8 +44,8 @@ public class OrderConsumer {
             }
 
             // Преобразуем в сущности
-            Order order = orderMapper.toOrderEntity(kafkaMessage);
-            List<OrderItem> orderItems = orderMapper.toOrderItemEntities(kafkaMessage, order);
+            Order order = orderMapper.toOrderEntity(message);
+            List<OrderItem> orderItems = orderMapper.toOrderItemEntities(message, order);
 
             // Сохраняем в одной транзакции
             orderService.processOrder(order, orderItems);

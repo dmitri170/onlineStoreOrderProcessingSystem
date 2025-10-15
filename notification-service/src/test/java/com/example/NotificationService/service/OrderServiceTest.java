@@ -1,6 +1,5 @@
 package com.example.NotificationService.service;
 
-import com.example.NotificationService.dto.KafkaOrderMessage;
 import com.example.NotificationService.dto.OrderDto;
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderItem;

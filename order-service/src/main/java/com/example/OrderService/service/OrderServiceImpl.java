@@ -1,16 +1,16 @@
 package com.example.OrderService.service;
 
 import com.example.OrderService.dto.OrderRequest;
-import com.example.OrderService.dto.OrderItemDTO;
 import com.example.OrderService.entity.User;
 import com.example.OrderService.exception.ProductsUnavailableException;
 import com.example.OrderService.exception.UserNotFoundException;
 import com.example.OrderService.grpc.InventoryClient;
 import com.example.OrderService.kafka.OrderProducer;
-import com.example.OrderService.message.model.OrderMessage;
 import com.example.OrderService.repository.UserRepository;
 import com.example.inventory.BulkProductResponse;
 import com.example.inventory.ProductResponseItem;
+import com.example.inventory.ReserveProductsResponse;
+import dto.OrderMessage;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -49,12 +49,12 @@ public class OrderServiceImpl implements OrderService{
      */
     public String processOrder(OrderRequest request, String username) {
         String orderUuid = UUID.randomUUID().toString();
-        log.info("[Заказ: RqUuid {}] Начало обработки заказа | Пользователь: {} | Товаров: {}",
+        log.info("[Заказ: RqUid {}] Начало обработки заказа | Пользователь: {} | Товаров: {}",
                 orderUuid, username, request.getItems().size());
         try {
             User user = findUser(username, orderUuid);
 
-            // Проверяем доступность ВСЕХ товаров одним gRPC вызовом
+            // 1. Проверяем доступность ВСЕХ товаров
             BulkProductResponse bulkResponse = inventoryClient.checkBulkAvailability(request.getItems(), orderUuid);
 
             // Если есть недоступные товары - бросаем исключение
@@ -64,23 +64,30 @@ public class OrderServiceImpl implements OrderService{
                     unavailableProducts.add(String.format("Товар ID:%d '%s' (запрошено: %d, доступно: %d)",
                             item.getProductId(), item.getName(), item.getRequestedQuantity(), item.getAvailableQuantity()));
                 }
-
                 log.warn("[Заказ: {}] Найдены недоступные товары: {}", orderUuid, unavailableProducts);
                 throw new ProductsUnavailableException("Некоторые товары недоступны", unavailableProducts);
             }
 
-            // Создаем OrderItems из доступных товаров
+            // 2. Резервируем товары
+            ReserveProductsResponse reserveResponse = inventoryClient.reserveProducts(orderUuid, request.getItems());
+
+            if (!reserveResponse.getSuccess()) {
+                log.error("[Заказ: {}] Не удалось зарезервировать товары: {}", orderUuid, reserveResponse.getMessage());
+                throw new RuntimeException("Не удалось зарезервировать товары: " + reserveResponse.getMessage());
+            }
+
+            // 3. Создаем OrderItems из доступных товаров
             List<OrderItemProcessingResult> processingResults = createOrderItemsFromResponse(
                     bulkResponse.getAvailableItemsList(), orderUuid);
 
-            // Рассчитываем общую сумму
+            // 4. Рассчитываем общую сумму
             BigDecimal total = calculateTotal(processingResults);
             List<OrderMessage.OrderItemMessage> orderItems = createOrderItems(processingResults);
 
-            log.info("[Заказ: {}] Все товары проверены успешно. Итого: {}, Количество позиций: {}",
+            log.info("[Заказ: {}] Все товары проверены и зарезервированы. Итого: {}, Количество позиций: {}",
                     orderUuid, total, orderItems.size());
 
-            // Создаем и отправляем сообщение в Kafka
+            // 5. Создаем и отправляем сообщение в Kafka
             OrderMessage message = createOrderMessage(orderUuid, user, total, orderItems);
             orderProducer.sendOrder(message);
 
@@ -171,7 +178,7 @@ public class OrderServiceImpl implements OrderService{
      * Создает сообщение для Kafka.
      */
     private OrderMessage createOrderMessage(String orderUuid, User user, BigDecimal total,
-                                            List<OrderMessage.OrderItemMessage> orderItems) {
+                                               List<OrderMessage.OrderItemMessage> orderItems) {
         return new OrderMessage(
                 orderUuid,
                 user.getId(),
