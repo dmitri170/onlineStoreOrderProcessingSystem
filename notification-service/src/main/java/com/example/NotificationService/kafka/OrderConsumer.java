@@ -5,6 +5,7 @@ import com.example.NotificationService.entity.OrderItem;
 import com.example.NotificationService.mapper.OrderMapper;
 import com.example.NotificationService.service.OrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dto.OrderMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -31,7 +32,7 @@ public class OrderConsumer {
      * @param message JSON строка с данными заказа
      */
     @KafkaListener(topics = "orders", groupId = "notification-group")
-    public void consume(KafkaOrderMessage message) {
+    public void consume(OrderMessage message) {
         try {
             log.info("Получено сообщение из Kafka: {}", message);
 

@@ -3,10 +3,14 @@ package com.example.OrderService.service;
 import com.example.OrderService.dto.OrderRequest;
 import com.example.OrderService.dto.OrderItemDTO;
 import com.example.OrderService.entity.User;
-import com.example.OrderService.exception.InsufficientStockException;
+import com.example.OrderService.exception.ProductsUnavailableException;
+import com.example.OrderService.exception.UserNotFoundException;
 import com.example.OrderService.grpc.InventoryClient;
 import com.example.OrderService.kafka.OrderProducer;
 import com.example.OrderService.repository.UserRepository;
+import com.example.inventory.BulkProductResponse;
+import com.example.inventory.ProductResponseItem;
+import dto.OrderMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +23,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 /**
@@ -41,12 +46,14 @@ class OrderServiceImplTest {
 
     private User testUser;
     private OrderRequest validOrderRequest;
-    private ProductResponse availableProduct;
 
     @BeforeEach
     void setUp() {
-        testUser = new User("testuser", "password", "test@example.com", com.example.OrderService.entity.Role.USER);
+        testUser = new User();
         testUser.setId(1L);
+        testUser.setUsername("testuser");
+        testUser.setPassword("password");
+        testUser.setEmail("test@example.com");
 
         OrderItemDTO item = new OrderItemDTO();
         item.setProductId(1L);
@@ -54,23 +61,32 @@ class OrderServiceImplTest {
 
         validOrderRequest = new OrderRequest();
         validOrderRequest.setItems(List.of(item));
-
-        availableProduct = ProductResponse.newBuilder()
-                .setProductId(1L)
-                .setName("Test Product")
-                .setQuantity(10)
-                .setPrice(100.0)
-                .setSale(0.1)
-                .setAvailable(true)
-                .build();
     }
 
     @Test
     void processOrder_WithValidData_ShouldSuccess() {
         // Arrange
+        BulkProductResponse bulkResponse = BulkProductResponse.newBuilder()
+                .setRqUid("test-uuid")
+                .addAvailableItems(ProductResponseItem.newBuilder()
+                        .setProductId(1L)
+                        .setName("Test Product")
+                        .setAvailableQuantity(10)
+                        .setRequestedQuantity(2)
+                        .setPrice(100.0)
+                        .setSale(0.1)
+                        .setIsAvailable(true)
+                        .build())
+                .build();
+
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(inventoryClient.checkAvailability(1L)).thenReturn(availableProduct);
-        doNothing().when(orderProducer).sendOrder(any(OrderMessageDto.class));
+        when(inventoryClient.checkBulkAvailability(anyList(), anyString())).thenReturn(bulkResponse);
+        when(inventoryClient.reserveProducts(anyString(), anyList())).thenReturn(
+                com.example.inventory.ReserveProductsResponse.newBuilder()
+                        .setSuccess(true)
+                        .build()
+        );
+        doNothing().when(orderProducer).sendOrder(any(OrderMessage.class));
 
         // Act
         String orderId = orderServiceImpl.processOrder(validOrderRequest, "testuser");
@@ -78,8 +94,9 @@ class OrderServiceImplTest {
         // Assert
         assertNotNull(orderId);
         verify(userRepository, times(1)).findByUsername("testuser");
-        verify(inventoryClient, times(1)).checkAvailability(1L);
-        verify(orderProducer, times(1)).sendOrder(any(OrderMessageDto.class));
+        verify(inventoryClient, times(1)).checkBulkAvailability(anyList(), anyString());
+        verify(inventoryClient, times(1)).reserveProducts(anyString(), anyList());
+        verify(orderProducer, times(1)).sendOrder(any(OrderMessage.class));
     }
 
     @Test
@@ -88,73 +105,78 @@ class OrderServiceImplTest {
         when(userRepository.findByUsername("unknown")).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(UserNotFoundException.class, () -> {
             orderServiceImpl.processOrder(validOrderRequest, "unknown");
         });
 
         verify(userRepository, times(1)).findByUsername("unknown");
-        verify(inventoryClient, never()).checkAvailability(any());
+        verify(inventoryClient, never()).checkBulkAvailability(anyList(), anyString());
         verify(orderProducer, never()).sendOrder(any());
     }
 
     @Test
-    void processOrder_WithInsufficientStock_ShouldThrowException() {
+    void processOrder_WithUnavailableProducts_ShouldThrowException() {
         // Arrange
-        ProductResponse outOfStockProduct = ProductResponse.newBuilder()
-                .setProductId(1L)
-                .setQuantity(1) // Only 1 available, but requested 2
-                .setPrice(100.0)
-                .setSale(0.0)
-                .setAvailable(true)
+        BulkProductResponse bulkResponse = BulkProductResponse.newBuilder()
+                .setRqUid("test-uuid")
+                .addUnavailableItems(ProductResponseItem.newBuilder()
+                        .setProductId(1L)
+                        .setName("Test Product")
+                        .setAvailableQuantity(1)
+                        .setRequestedQuantity(2)
+                        .setPrice(100.0)
+                        .setSale(0.1)
+                        .setIsAvailable(false)
+                        .build())
                 .build();
 
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(inventoryClient.checkAvailability(1L)).thenReturn(outOfStockProduct);
+        when(inventoryClient.checkBulkAvailability(anyList(), anyString())).thenReturn(bulkResponse);
 
         // Act & Assert
-        assertThrows(InsufficientStockException.class, () -> {
+        assertThrows(ProductsUnavailableException.class, () -> {
             orderServiceImpl.processOrder(validOrderRequest, "testuser");
         });
 
         verify(userRepository, times(1)).findByUsername("testuser");
-        verify(inventoryClient, times(1)).checkAvailability(1L);
+        verify(inventoryClient, times(1)).checkBulkAvailability(anyList(), anyString());
+        verify(inventoryClient, never()).reserveProducts(anyString(), anyList());
         verify(orderProducer, never()).sendOrder(any());
     }
 
     @Test
-    void processOrder_WithMultipleItems_ShouldProcessAllItems() {
+    void processOrder_WithReservationFailure_ShouldThrowException() {
         // Arrange
-        OrderItemDTO item1 = new OrderItemDTO();
-        item1.setProductId(1L);
-        item1.setQuantity(1);
-
-        OrderItemDTO item2 = new OrderItemDTO();
-        item2.setProductId(2L);
-        item2.setQuantity(3);
-
-        OrderRequest multiItemRequest = new OrderRequest();
-        multiItemRequest.setItems(List.of(item1, item2));
-
-        ProductResponse product2 = ProductResponse.newBuilder()
-                .setProductId(2L)
-                .setQuantity(5)
-                .setPrice(50.0)
-                .setSale(0.0)
-                .setAvailable(true)
+        BulkProductResponse bulkResponse = BulkProductResponse.newBuilder()
+                .setRqUid("test-uuid")
+                .addAvailableItems(ProductResponseItem.newBuilder()
+                        .setProductId(1L)
+                        .setName("Test Product")
+                        .setAvailableQuantity(10)
+                        .setRequestedQuantity(2)
+                        .setPrice(100.0)
+                        .setSale(0.1)
+                        .setIsAvailable(true)
+                        .build())
                 .build();
 
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        when(inventoryClient.checkAvailability(1L)).thenReturn(availableProduct);
-        when(inventoryClient.checkAvailability(2L)).thenReturn(product2);
-        doNothing().when(orderProducer).sendOrder(any(OrderMessageDto.class));
+        when(inventoryClient.checkBulkAvailability(anyList(), anyString())).thenReturn(bulkResponse);
+        when(inventoryClient.reserveProducts(anyString(), anyList())).thenReturn(
+                com.example.inventory.ReserveProductsResponse.newBuilder()
+                        .setSuccess(false)
+                        .setMessage("Reservation failed")
+                        .build()
+        );
 
-        // Act
-        String orderId = orderServiceImpl.processOrder(multiItemRequest, "testuser");
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            orderServiceImpl.processOrder(validOrderRequest, "testuser");
+        });
 
-        // Assert
-        assertNotNull(orderId);
-        verify(inventoryClient, times(1)).checkAvailability(1L);
-        verify(inventoryClient, times(1)).checkAvailability(2L);
-        verify(orderProducer, times(1)).sendOrder(any(OrderMessageDto.class));
+        verify(userRepository, times(1)).findByUsername("testuser");
+        verify(inventoryClient, times(1)).checkBulkAvailability(anyList(), anyString());
+        verify(inventoryClient, times(1)).reserveProducts(anyString(), anyList());
+        verify(orderProducer, never()).sendOrder(any());
     }
 }
