@@ -2,6 +2,7 @@ package com.example.NotificationService.mapper;
 
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderItem;
+import dto.OrderMessage;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -25,7 +26,7 @@ public class OrderMapper {
      * @param kafkaMessage сообщение из Kafka
      * @return сущность заказа
      */
-    public Order toOrderEntity(KafkaOrderMessage kafkaMessage) {
+    public Order toOrderEntity(OrderMessage kafkaMessage) {
         Order order = new Order();
         order.setOrderId(kafkaMessage.getOrderId());
         order.setUserId(kafkaMessage.getUserId());
@@ -41,7 +42,7 @@ public class OrderMapper {
      * @param order родительский заказ
      * @return список сущностей товаров заказа
      */
-    public List<OrderItem> toOrderItemEntities(KafkaOrderMessage kafkaMessage, Order order) {
+    public List<OrderItem> toOrderItemEntities(OrderMessage kafkaMessage, Order order) {
         if (kafkaMessage.getItems() == null) {
             return List.of();
         }
@@ -58,7 +59,7 @@ public class OrderMapper {
      * @param order родительский заказ
      * @return сущность товара заказа
      */
-    private OrderItem toOrderItemEntity(KafkaOrderMessage.OrderItemMessage itemMessage, Order order) {
+    private OrderItem toOrderItemEntity(OrderMessage.OrderItemMessage itemMessage, Order order) {
         OrderItem orderItem = new OrderItem();
         orderItem.setOrder(order);
         orderItem.setProductId(getSafeLong(itemMessage.getProductId()));

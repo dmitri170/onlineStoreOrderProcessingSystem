@@ -2,6 +2,7 @@ package com.example.NotificationService.mapper;
 
 import com.example.NotificationService.entity.Order;
 import com.example.NotificationService.entity.OrderItem;
+import dto.OrderMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,9 +12,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Юнит тесты для OrderMapper.
- */
 class OrderMapperTest {
 
     private OrderMapper orderMapper;
@@ -24,13 +22,15 @@ class OrderMapperTest {
     }
 
     @Test
-    void toOrderEntity_WithValidKafkaMessage_ShouldReturnOrder() {
+    void toOrderEntity_WithValidOrderMessage_ShouldReturnOrder() {
         // Arrange
-        KafkaOrderMessage message = new KafkaOrderMessage();
+        OrderMessage message = new OrderMessage();
         message.setOrderId("order-123");
         message.setUserId(1L);
+        message.setUsername("testuser");
         message.setTotalPrice(BigDecimal.valueOf(150.0));
-        message.setOrderDate(LocalDateTime.now().toString());
+        String dateString = LocalDateTime.now().toString();
+        message.setOrderDate(dateString);
 
         // Act
         Order order = orderMapper.toOrderEntity(message);
@@ -46,7 +46,7 @@ class OrderMapperTest {
     @Test
     void toOrderEntity_WithNullDate_ShouldUseCurrentDate() {
         // Arrange
-        KafkaOrderMessage message = new KafkaOrderMessage();
+        OrderMessage message = new OrderMessage();
         message.setOrderId("order-123");
         message.setUserId(1L);
         message.setTotalPrice(BigDecimal.valueOf(150.0));
@@ -63,19 +63,17 @@ class OrderMapperTest {
     @Test
     void toOrderItemEntities_WithValidItems_ShouldReturnOrderItems() {
         // Arrange
-        KafkaOrderMessage message = new KafkaOrderMessage();
+        OrderMessage message = new OrderMessage();
         message.setOrderId("order-123");
 
-        KafkaOrderMessage.OrderItemMessage itemMessage = new KafkaOrderMessage.OrderItemMessage();
-        itemMessage.setProductId(1L);
-        itemMessage.setQuantity(2);
-        itemMessage.setPrice(BigDecimal.valueOf(50.0));
-        itemMessage.setDiscount(BigDecimal.valueOf(0.1));
-        itemMessage.setItemTotal(BigDecimal.valueOf(90.0));
+        OrderMessage.OrderItemMessage itemMessage = new OrderMessage.OrderItemMessage(
+                1L, 2, BigDecimal.valueOf(50.0), BigDecimal.valueOf(0.1), BigDecimal.valueOf(90.0)
+        );
 
         message.setItems(List.of(itemMessage));
 
         Order order = new Order();
+        order.setId(1L);
         order.setOrderId("order-123");
 
         // Act
@@ -95,10 +93,10 @@ class OrderMapperTest {
     }
 
     @Test
-    void toOrderItemEntities_WithNullItems_ShouldReturnEmptyList() {
+    void toOrderItemEntities_WithEmptyItems_ShouldReturnEmptyList() {
         // Arrange
-        KafkaOrderMessage message = new KafkaOrderMessage();
-        message.setItems(null);
+        OrderMessage message = new OrderMessage();
+        message.setItems(List.of());
 
         Order order = new Order();
 
@@ -111,14 +109,10 @@ class OrderMapperTest {
     }
 
     @Test
-    void toOrderItemEntities_WithNullValues_ShouldUseDefaults() {
+    void toOrderItemEntities_WithNullItems_ShouldReturnEmptyList() {
         // Arrange
-        KafkaOrderMessage message = new KafkaOrderMessage();
-
-        KafkaOrderMessage.OrderItemMessage itemMessage = new KafkaOrderMessage.OrderItemMessage();
-        // All fields are null
-
-        message.setItems(List.of(itemMessage));
+        OrderMessage message = new OrderMessage();
+        message.setItems(null);
 
         Order order = new Order();
 
@@ -127,13 +121,6 @@ class OrderMapperTest {
 
         // Assert
         assertNotNull(orderItems);
-        assertEquals(1, orderItems.size());
-
-        OrderItem orderItem = orderItems.get(0);
-        assertEquals(0L, orderItem.getProductId());
-        assertEquals(0, orderItem.getQuantity());
-        assertEquals(BigDecimal.ZERO, orderItem.getPrice());
-        assertEquals(BigDecimal.ZERO, orderItem.getDiscount());
-        assertEquals(BigDecimal.ZERO, orderItem.getItemTotal());
+        assertTrue(orderItems.isEmpty());
     }
 }

@@ -18,6 +18,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -40,15 +41,19 @@ class ProductServiceTest {
 
     @BeforeEach
     void setUp() {
-        testProduct = new ProductEntity("Test Product", 10, BigDecimal.valueOf(100.0), BigDecimal.valueOf(0.1));
+        testProduct = new ProductEntity();
         testProduct.setId(1L);
+        testProduct.setName("Test Product");
+        testProduct.setQuantity(10);
+        testProduct.setPrice(BigDecimal.valueOf(100.0));
+        testProduct.setSale(BigDecimal.valueOf(0.1));
 
         testProductDto = new ProductDto();
         testProductDto.setId(1L);
         testProductDto.setName("Test Product");
         testProductDto.setQuantity(10);
-        testProductDto.setPrice(100.0);
-        testProductDto.setSale(0.1);
+        testProductDto.setPrice(BigDecimal.valueOf(100.0));
+        testProductDto.setSale(BigDecimal.valueOf(0.1));
     }
 
     @Test
@@ -65,6 +70,22 @@ class ProductServiceTest {
         assertEquals(1, result.size());
         assertEquals(testProductDto, result.get(0));
         verify(productRepository, times(1)).findAll();
+        verify(modelMapper, times(1)).map(testProduct, ProductDto.class);
+    }
+
+    @Test
+    void getAllProducts_WhenNoProducts_ShouldReturnEmptyList() {
+        // Arrange
+        when(productRepository.findAll()).thenReturn(List.of());
+
+        // Act
+        List<ProductDto> result = productService.getAllProducts();
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(productRepository, times(1)).findAll();
+        verify(modelMapper, never()).map(any(), eq(ProductDto.class));
     }
 
     @Test
@@ -80,6 +101,7 @@ class ProductServiceTest {
         assertNotNull(result);
         assertEquals(testProductDto, result);
         verify(productRepository, times(1)).findById(1L);
+        verify(modelMapper, times(1)).map(testProduct, ProductDto.class);
     }
 
     @Test
@@ -88,10 +110,13 @@ class ProductServiceTest {
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             productService.getProductById(999L);
         });
+
+        assertEquals("Product not found with id: 999", exception.getMessage());
         verify(productRepository, times(1)).findById(999L);
+        verify(modelMapper, never()).map(any(), eq(ProductDto.class));
     }
 
     @Test
@@ -107,7 +132,9 @@ class ProductServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(testProductDto, result);
+        verify(modelMapper, times(1)).map(testProductDto, ProductEntity.class);
         verify(productRepository, times(1)).save(testProduct);
+        verify(modelMapper, times(1)).map(testProduct, ProductDto.class);
     }
 
     @Test
@@ -116,18 +143,53 @@ class ProductServiceTest {
         ProductDto updateDto = new ProductDto();
         updateDto.setName("Updated Product");
         updateDto.setQuantity(20);
+        updateDto.setPrice(BigDecimal.valueOf(150.0));
+        updateDto.setSale(BigDecimal.valueOf(0.15));
+
+        ProductEntity updatedProduct = new ProductEntity();
+        updatedProduct.setId(1L);
+        updatedProduct.setName("Updated Product");
+        updatedProduct.setQuantity(20);
+        updatedProduct.setPrice(BigDecimal.valueOf(150.0));
+        updatedProduct.setSale(BigDecimal.valueOf(0.15));
+
+        ProductDto expectedDto = new ProductDto();
+        expectedDto.setId(1L);
+        expectedDto.setName("Updated Product");
+        expectedDto.setQuantity(20);
+        expectedDto.setPrice(BigDecimal.valueOf(150.0));
+        expectedDto.setSale(BigDecimal.valueOf(0.15));
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(productRepository.save(any(ProductEntity.class))).thenReturn(testProduct);
-        when(modelMapper.map(testProduct, ProductDto.class)).thenReturn(testProductDto);
+        when(productRepository.save(any(ProductEntity.class))).thenReturn(updatedProduct);
+        when(modelMapper.map(updatedProduct, ProductDto.class)).thenReturn(expectedDto);
 
         // Act
         ProductDto result = productService.updateProduct(1L, updateDto);
 
         // Assert
         assertNotNull(result);
+        assertEquals("Updated Product", result.getName());
+        assertEquals(20, result.getQuantity());
         verify(productRepository, times(1)).findById(1L);
         verify(productRepository, times(1)).save(any(ProductEntity.class));
+        verify(modelMapper, times(1)).map(updatedProduct, ProductDto.class);
+    }
+
+    @Test
+    void updateProduct_WithNonExistingId_ShouldThrowException() {
+        // Arrange
+        ProductDto updateDto = new ProductDto();
+        when(productRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            productService.updateProduct(999L, updateDto);
+        });
+
+        assertEquals("Product not found with id: 999", exception.getMessage());
+        verify(productRepository, times(1)).findById(999L);
+        verify(productRepository, never()).save(any(ProductEntity.class));
     }
 
     @Test
@@ -150,9 +212,11 @@ class ProductServiceTest {
         when(productRepository.existsById(999L)).thenReturn(false);
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             productService.deleteProduct(999L);
         });
+
+        assertEquals("Product not found with id: 999", exception.getMessage());
         verify(productRepository, times(1)).existsById(999L);
         verify(productRepository, never()).deleteById(anyLong());
     }
