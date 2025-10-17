@@ -1,5 +1,7 @@
 package com.example.OrderService.kafka;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dto.OrderMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,15 +18,26 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class OrderProducer {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
-    public void sendOrder(OrderMessage orderMessage) {
+    @Value("${app.kafka.topics.orders}")
+    private String ordersTopic;
+
+    /**
+     * Отправляет заказ в Kafka топик.
+     *
+     * @param message сообщение с данными заказа
+     * @throws RuntimeException если не удалось сериализовать сообщение
+     */
+    public void sendOrder(OrderMessage message) {
         try {
-            log.info("[Заказ: {}] Отправка заказа в Kafka топик 'orders'", orderMessage.getOrderId());
-            kafkaTemplate.send("orders", orderMessage.getOrderId(), orderMessage);
-            log.info("[Заказ: {}] Заказ успешно отправлен в Kafka", orderMessage.getOrderId());
-        } catch (Exception e) {
-            log.error("[Заказ: {}] Ошибка при отправке заказа в Kafka: {}", orderMessage.getOrderId(), e.getMessage(), e);
+            String messageJson = objectMapper.writeValueAsString(message);
+            // Отправляем сообщение с ключом = orderId для гарантии порядка обработки заказов с одинаковым ID
+            kafkaTemplate.send(ordersTopic, message.getOrderId(), messageJson);
+            log.info("Заказ отправлен в Kafka: {}", message.getOrderId());
+        } catch (JsonProcessingException e) {
+            log.error("Не удалось сериализовать сообщение заказа: {}", e.getMessage());
             throw new RuntimeException("Не удалось отправить заказ в Kafka", e);
         }
     }
