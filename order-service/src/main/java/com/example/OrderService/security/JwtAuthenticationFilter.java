@@ -1,29 +1,30 @@
 package com.example.OrderService.security;
 
-import com.example.OrderService.exception.JwtAuthenticationException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+
 /**
  * Фильтр для аутентификации JWT токенов.
  * Перехватывает HTTP запросы и проверяет JWT токен в заголовке Authorization.
+ * Устанавливает аутентификацию в SecurityContext если токен валиден.
+ *
+ * Важно: Этот фильтр не должен быть аннотирован @Component чтобы избежать
+ * циклических зависимостей. Создается как бин в SecurityConfig.
  */
-@Component
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -33,10 +34,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Обрабатывает каждый HTTP запрос для JWT аутентификации.
+     * Извлекает JWT токен из заголовка Authorization, проверяет его валидность
+     * и устанавливает аутентификацию в SecurityContext если токен корректен.
      *
      * @param request HTTP запрос
      * @param response HTTP ответ
-     * @param filterChain цепочка фильтров
+     * @param filterChain цепочка фильтров для продолжения обработки
      * @throws ServletException если возникает ошибка сервлета
      * @throws IOException если возникает ошибка ввода-вывода
      */
@@ -44,41 +47,74 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String jwt = getJwtFromRequest(request);
+        try {
+            String jwt = getJwtFromRequest(request);
 
-        if (StringUtils.hasText(jwt)) {
-            try {
+            if (StringUtils.hasText(jwt)) {
                 if (jwtTokenProvider.validateToken(jwt)) {
                     String username = jwtTokenProvider.getUsernameFromToken(jwt);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    // Загружаем данные пользователя только если аутентификация еще не установлена
+                    if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                        // Создаем объект аутентификации Spring Security
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                        // Устанавливаем аутентификацию в контекст безопасности
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                        log.debug("Successfully authenticated user: {}", username);
+                    }
                 }
-            } catch (JwtAuthenticationException e) {
-                logger.warn("JWT authentication failed: {}");
-                // Continue without authentication
-            } catch (Exception e) {
-                logger.error("Could not set user authentication in security context", e);
             }
+        } catch (Exception e) {
+            // Логируем ошибку, но продолжаем выполнение цепочки фильтров
+            // Пользователь останется неаутентифицированным
+            log.warn("Failed to process JWT authentication: {}", e.getMessage());
         }
 
+        // Продолжаем выполнение цепочки фильтров
         filterChain.doFilter(request, response);
     }
+
     /**
      * Извлекает JWT токен из заголовка Authorization HTTP запроса.
+     * Ожидает формат: "Bearer <token>"
      *
-     * @param request HTTP запрос
-     * @return JWT токен или null если токен не найден
+     * @param request HTTP запрос для извлечения токена
+     * @return JWT токен или null если токен не найден или формат неверный
      */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
+
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            // Извлекаем токен без префикса "Bearer "
             return bearerToken.substring(7);
         }
+
         return null;
     }
-} 
+
+    /**
+     * Определяет, должен ли фильтр применяться к данному запросу.
+     * Можно переопределить для исключения определенных путей.
+     *
+     * @param request HTTP запрос
+     * @return true если фильтр должен быть применен, false в противном случае
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Можно добавить исключения для определенных путей
+        String path = request.getServletPath();
+        return path.startsWith("/auth/") ||
+                path.startsWith("/swagger-ui/") ||
+                path.startsWith("/v3/api-docs/");
+    }
+}
