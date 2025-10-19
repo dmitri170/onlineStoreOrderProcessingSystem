@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
 
 grpc:
   server:
@@ -7,19 +7,31 @@ grpc:
 
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/online_store
+    url: jdbc:postgresql://localhost:5432/online_store
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 5
+      minimum-idle: 1
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        connection:
+          provider_disables_autocommit: true
 
 logging:
   level:
     com.example.InventoryService: DEBUG
+    org.hibernate: DEBUG
+    org.springframework.jdbc: DEBUG
+    com.zaxxer.hikari: DEBUG
