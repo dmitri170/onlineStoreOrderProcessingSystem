@@ -7,7 +7,7 @@ grpc:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/online_store
+    url: jdbc:postgresql://postgres:5432/online_store
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver

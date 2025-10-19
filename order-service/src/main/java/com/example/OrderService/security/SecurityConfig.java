@@ -28,6 +28,7 @@ import java.util.List;
 /**
  * Конфигурация безопасности Spring Security.
  * Настраивает аутентификацию, авторизацию и CORS для приложения.
+ * Обеспечивает JWT-аутентификацию и защиту эндпоинтов.
  */
 @Configuration
 @EnableWebSecurity
@@ -35,14 +36,26 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
 
     /**
-     * Настраивает цепочку фильтров безопасности HTTP.
+     * Создает бин JwtAuthenticationFilter для обработки JWT токенов.
+     * Фильтр проверяет наличие и валидность JWT токена в заголовках запросов.
      *
-     * @param http объект для настройки безопасности
-     * @return сконфигурированная цепочка фильтров
+     * @return настроенный JwtAuthenticationFilter
+     */
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService);
+    }
+
+    /**
+     * Настраивает цепочку фильтров безопасности HTTP.
+     * Определяет политики CORS, CSRF, сессий и авторизации.
+     *
+     * @param http объект для настройки безопасности HTTP
+     * @return сконфигурированная цепочка фильтров безопасности
      * @throws Exception если конфигурация не удалась
      */
     @Bean
@@ -51,25 +64,24 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Явная настройка анонимной аутентификации
-                .anonymous(anonymous -> anonymous
-                        .principal("anonymousUser")
-                        .authorities("ROLE_ANONYMOUS")
-                )
                 .authorizeHttpRequests(auth -> auth
+                        // Публичные эндпоинты
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // Для Swagger
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Защищенные эндпоинты
                         .requestMatchers("/api/order").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        // Все остальные запросы требуют аутентификации
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     /**
-     * Настраивает политику CORS для кросс-доменных запросов.
+     * Настраивает политику CORS (Cross-Origin Resource Sharing) для кросс-доменных запросов.
+     * Определяет разрешенные источники, методы, заголовки и другие параметры CORS.
      *
      * @return источник конфигурации CORS
      */
@@ -77,7 +89,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Для продакшена замените "*" на конкретные домены
+        // Разрешенные домены (для продакшена замените на конкретные домены)
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",  // React dev server
                 "http://localhost:8080",  // Spring Boot app
@@ -85,7 +97,12 @@ public class SecurityConfig {
                 "https://yourdomain.com"  // Продакшен домен
         ));
 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        // Разрешенные HTTP методы
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
+        ));
+
+        // Разрешенные заголовки
         configuration.setAllowedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type",
@@ -95,12 +112,18 @@ public class SecurityConfig {
                 "Access-Control-Request-Method",
                 "Access-Control-Request-Headers"
         ));
+
+        // Заголовки, доступные клиенту
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Disposition"
         ));
+
+        // Разрешить отправку учетных данных (cookies, authentication)
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L); // Кэшировать preflight запросы на 1 час
+
+        // Время кэширования preflight запросов (1 час)
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -108,9 +131,10 @@ public class SecurityConfig {
     }
 
     /**
-     * Настраивает провайдер аутентификации.
+     * Настраивает провайдер аутентификации DAO (Data Access Object).
+     * Использует UserDetailsService для загрузки данных пользователя и PasswordEncoder для проверки паролей.
      *
-     * @return провайдер аутентификации DAO
+     * @return настроенный провайдер аутентификации DAO
      */
     @Bean
     public AuthenticationProvider authenticationProvider() {
@@ -121,9 +145,10 @@ public class SecurityConfig {
     }
 
     /**
-     * Настраивает кодировщик паролей.
+     * Настраивает кодировщик паролей BCrypt.
+     * BCrypt автоматически добавляет salt и обеспечивает безопасное хеширование паролей.
      *
-     * @return кодировщик BCrypt
+     * @return кодировщик паролей BCrypt
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -131,9 +156,10 @@ public class SecurityConfig {
     }
 
     /**
-     * Настраивает менеджер аутентификации.
+     * Настраивает менеджер аутентификации Spring Security.
+     * Отвечает за процесс аутентификации пользователей.
      *
-     * @param config конфигурация аутентификации
+     * @param config конфигурация аутентификации Spring
      * @return менеджер аутентификации
      * @throws Exception если конфигурация не удалась
      */
@@ -144,9 +170,9 @@ public class SecurityConfig {
 
     /**
      * Настраивает GrpcAuthenticationReader для gRPC безопасности.
-     * Этот бин требуется grpc-spring-boot-starter для работы с аутентификацией.
+     * Этот бин требуется grpc-spring-boot-starter для работы с аутентификацией в gRPC запросах.
      *
-     * @return GrpcAuthenticationReader для базовой аутентификации
+     * @return GrpcAuthenticationReader для базовой аутентификации gRPC
      */
     @Bean
     public GrpcAuthenticationReader grpcAuthenticationReader() {
