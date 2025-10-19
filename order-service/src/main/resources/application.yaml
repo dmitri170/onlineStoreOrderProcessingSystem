@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/online_store
+    url: jdbc:postgresql://localhost:5432/online_store
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver
@@ -16,7 +16,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   kafka:
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: localhost:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -24,7 +24,7 @@ spring:
 grpc:
   client:
     inventory-service:
-      address: static://inventory-service:9091
+      address: static://localhost:9091
       negotiation-type: plaintext
 
 jwt:
@@ -33,8 +33,10 @@ jwt:
 
 app:
   kafka:
-    topic: orders
+    topics:
+      orders: "orders"
 
 logging:
   level:
     com.example: DEBUG
+    org.springframework.kafka: DEBUG

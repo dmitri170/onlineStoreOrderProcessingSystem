@@ -1,9 +1,9 @@
 server:
-  port: 8080
+  port: 8082
 
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/online_store
+    url: jdbc:postgresql://localhost:5432/online_store
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver
@@ -16,10 +16,9 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   kafka:
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: localhost:9092
     consumer:
       group-id: notification-group
-      auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
@@ -32,3 +31,4 @@ app:
 logging:
   level:
     com.example.NotificationService: DEBUG
+    org.springframework.kafka: DEBUG
