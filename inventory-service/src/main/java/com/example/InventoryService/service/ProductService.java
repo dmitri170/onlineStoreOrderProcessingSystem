@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
  * Работает с DTO для внешнего API, внутренне использует Entity для БД.
  */
 @Service
-@Transactional
 @RequiredArgsConstructor
 @Slf4j
 public class ProductService {
@@ -35,6 +34,7 @@ public class ProductService {
      *
      * @return список DTO товаров
      */
+    //@Transactional(readOnly = true)
     public List<ProductDto> getAllProducts() {
         return productRepository.findAll().stream()
                 .map(this::convertToDto)
@@ -48,6 +48,7 @@ public class ProductService {
      * @return DTO товара
      * @throws RuntimeException если товар не найден
      */
+    //@Transactional(readOnly = true)
     public ProductDto getProductById(Long id) {
         ProductEntity productEntity = findProductEntityById(id);
         return convertToDto(productEntity);
@@ -59,6 +60,7 @@ public class ProductService {
      * @param productDto DTO с данными товара
      * @return созданный товар в виде DTO
      */
+    @Transactional
     public ProductDto createProduct(ProductDto productDto) {
         ProductEntity productEntity = convertToEntity(productDto);
         ProductEntity savedProductEntity = productRepository.save(productEntity);
@@ -73,6 +75,7 @@ public class ProductService {
      * @return обновленный товар в виде DTO
      * @throws RuntimeException если товар не найден
      */
+    @Transactional
     public ProductDto updateProduct(Long id, ProductDto productDto) {
         ProductEntity existingProductEntity = findProductEntityById(id);
 
@@ -100,6 +103,7 @@ public class ProductService {
      * @param id идентификатор товара
      * @throws RuntimeException если товар не найден
      */
+    @Transactional
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
             throw new RuntimeException("Товар не найден с id: " + id);
