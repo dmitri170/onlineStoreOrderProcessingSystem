@@ -15,20 +15,23 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-  kafka:
-    bootstrap-servers: kafka:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-    properties:
-      request.timeout.ms: 30000
-      delivery.timeout.ms: 45000
+
+    spring:
+      kafka:
+        bootstrap-servers: kafka:9092
+        producer:
+          key-serializer: org.apache.kafka.common.serialization.StringSerializer
+          value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+        properties:
+          spring.json.trusted.packages: "*"
 
 grpc:
   client:
     inventory-service:
       address: static://inventory-service:9091
       negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-without-calls: true
 
 jwt:
   secret: "bmV3LXN1cGVyLXNlY3VyZS1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW5zLTIwMjQ="
