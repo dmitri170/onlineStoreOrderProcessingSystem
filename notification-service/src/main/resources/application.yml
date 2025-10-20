@@ -15,14 +15,17 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-  kafka:
-    bootstrap-servers: kafka:9092
-    consumer:
-      group-id: notification-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+  spring:
+    kafka:
+      bootstrap-servers: kafka:9092
+      consumer:
+        group-id: notification-group
+        auto-offset-reset: earliest
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
 
 app:
   kafka:
@@ -32,3 +35,12 @@ logging:
   level:
     com.example.NotificationService: DEBUG
     org.springframework.kafka: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      enabled: true

@@ -17,17 +17,8 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
         <module name="notification-service" />
-        <module name="order-service" />
-      </profile>
-      <profile name="Annotation profile for inventory-service" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
-        </processorPath>
         <module name="inventory-service" />
+        <module name="order-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -40,7 +31,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="common" options="" />
-      <module name="inventory-service" options="" />
+      <module name="inventory-service" options="-parameters" />
       <module name="notification-service" options="-parameters" />
       <module name="order-service" options="-parameters" />
     </option>

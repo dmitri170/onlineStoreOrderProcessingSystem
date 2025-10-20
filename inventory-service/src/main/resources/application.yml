@@ -12,10 +12,12 @@ spring:
     password: password
     driver-class-name: org.postgresql.Driver
     hikari:
+      auto-commit: true
       connection-timeout: 30000
       maximum-pool-size: 5
       minimum-idle: 1
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: create
     show-sql: true
@@ -23,11 +25,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-        jdbc:
-          lob:
-            non_contextual_creation: true
-        connection:
-          provider_disables_autocommit: true
 
 logging:
   level:
@@ -35,3 +32,12 @@ logging:
     org.hibernate: DEBUG
     org.springframework.jdbc: DEBUG
     com.zaxxer.hikari: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      enabled: true

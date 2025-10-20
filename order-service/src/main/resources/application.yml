@@ -19,7 +19,10 @@ spring:
     bootstrap-servers: kafka:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    properties:
+      request.timeout.ms: 30000
+      delivery.timeout.ms: 45000
 
 grpc:
   client:
@@ -40,3 +43,12 @@ logging:
   level:
     com.example: DEBUG
     org.springframework.kafka: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      enabled: true
