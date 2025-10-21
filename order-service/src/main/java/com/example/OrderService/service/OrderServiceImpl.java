@@ -344,20 +344,20 @@ public class OrderServiceImpl implements OrderService {
             log.warn("Количество товара null или <= 0, используется 1");
             quantity = 1;
         }
-
+        BigDecimal discountFraction = discount.divide(BigDecimal.valueOf(100));
         // Ограничиваем скидку от 0 до 1 (0% до 100%)
-        if (discount.compareTo(BigDecimal.ZERO) < 0) {
+        if (discountFraction.compareTo(BigDecimal.ZERO) < 0) {
             log.warn("Скидка {} меньше 0, устанавливается 0", discount);
-            discount = BigDecimal.ZERO;
+            discountFraction = BigDecimal.ZERO;
         }
-        if (discount.compareTo(BigDecimal.ONE) > 0) {
+        if (discountFraction.compareTo(BigDecimal.ONE) > 0) {
             log.warn("Скидка {} больше 1, устанавливается 1", discount);
-            discount = BigDecimal.ONE;
+            discountFraction = BigDecimal.ONE;
         }
 
         BigDecimal total = price
                 .multiply(BigDecimal.valueOf(quantity))
-                .multiply(BigDecimal.ONE.subtract(discount));
+                .multiply(BigDecimal.ONE.subtract(discountFraction));
 
         log.debug("Расчет стоимости: price={}, quantity={}, discount={}, total={}",
                 price, quantity, discount, total);
